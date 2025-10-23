@@ -7,39 +7,7 @@
     <link rel="stylesheet" href="/static/style.css"/>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
-        /* Mobile-specific styles for game page */
-        @media (max-width: 768px) {
-            body {
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                height: 100vh;
-                height: 100dvh; /* Dynamic viewport height for mobile */
-            }
-            
-            #game-wrapper {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 100vw;
-                max-width: 480px;
-                height: auto;
-                aspect-ratio: 480 / 720;
-                margin: 0;
-                box-shadow: none;
-                border-radius: 0;
-            }
-            
-            /* Scale game wrapper to fit screen */
-            @media (max-height: 800px) {
-                #game-wrapper {
-                    height: 100vh;
-                    height: 100dvh;
-                    width: auto;
-                }
-            }
-        }
+     
         
         /* Prevent text selection and touch callouts on mobile */
         * {
@@ -56,6 +24,8 @@
 <body>
     <div class="gradient-bg"></div>
         <div class="stars" id="stars"></div>
+        <div class="background-title">Meet</div>
+
  
   <img src="static/assets/bg-img.jpeg" id= "bg-img">
   <!-- towers -->
@@ -119,6 +89,16 @@
 </div>
    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
+
+    const starsContainer = document.getElementById('stars');
+for (let i = 0; i < 100; i++) {
+  const star = document.createElement('div');
+  star.classList.add('star');
+  star.style.top = Math.random() * 100 + '%';
+  star.style.left = Math.random() * 100 + '%';
+  star.style.animationDuration = `${2 + Math.random() * 3}s`;
+  starsContainer.appendChild(star);
+}
     // Initialize game mode variables from Flask template
     const ai_mode = {% if ai_mode %}true{% else %}false{% endif %};
     const multi_mode = {% if multi %}true{% else %}false{% endif %};

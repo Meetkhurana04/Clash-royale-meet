@@ -1,4 +1,38 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Russo+One&display=swap');
+
+/* Background glowing title */
+.background-title {
+  position: fixed;
+  top: 14%;               /* adjust vertically */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 40px !important;
+  font-family: 'Russo One', sans-serif;
+ 
+  font-weight: 500;
+  color: rgba(315, 220, 100, 0.3);  /* a bit stronger base color */
+  letter-spacing: 5px;
+  text-transform: capitalize;
+
+  /* ✨ Balanced glow — crisp and not smoky */
+  text-shadow:
+      0 0 8px rgba(255, 200, 50, 0.3),
+      0 0 15px rgba(255, 200, 50, 0.2),
+      0 0 25px rgba(255, 200, 50, 0.1);
+
+  z-index: 5;
+  pointer-events: none;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+/* Responsive scaling */
+@media (max-width: 768px) {
+  .background-title {
+    font-size: 80px;
+  }
+}
 
 body {
   background: #000;
@@ -45,12 +79,14 @@ body {
 
 .star {
     position: absolute;
-    width: 4px;
-    height: 4px;
+    width: 3px;
+    height: 3px;
     background: white;
     border-radius: 50%;
     filter: blur(1px);
+    animation: twinkle 4s infinite ease-in-out;
 }
+
 
 canvas {
   /* border-radius: 32px; */
@@ -90,6 +126,31 @@ canvas {
   position: absolute;
   z-index: 11; /* canvas ke upar */
   pointer-events: auto;
+}
+
+/* Mobile responsive for game wrapper */
+@media (max-width: 768px) {
+  #game-wrapper {
+    position: fixed;
+    top: 34%;
+    left: 47%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    max-width: 480px;
+    height: auto;
+    aspect-ratio: 480 / 720;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  
+  /* For very tall phones */
+  @media (max-height: 800px) {
+    #game-wrapper {
+      height: 100vh;
+      height: 100dvh;
+      width: auto;
+    }
+  }
 }
 
 

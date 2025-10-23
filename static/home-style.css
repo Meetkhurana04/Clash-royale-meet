@@ -153,6 +153,14 @@ body {
     margin: -80px 0 0 0;
     position : relative;
     z-index: 5;
+
+  font-family: 'Russo One', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: #fff;
+  font-weight: 800;
+
+
 }
 
 .battle-btn, .party-btn {
