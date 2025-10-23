@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Room {{ room }}</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { background:#0b0b0b; color:#fff; font-family:Segoe UI, Roboto, Arial; padding:24px; }
+    .card { max-width:640px; margin:32px auto; padding:18px; border-radius:12px; background:#111; border:1px solid rgba(255,255,255,0.04); }
+    .room-code { font-weight:800; color:#ffd700; font-size:28px; }
+    .members { margin-top:12px; }
+    .member { padding:8px 10px; border-radius:8px; background:rgba(255,255,255,0.02); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+    .controls { display:flex; gap:8px; justify-content:center; margin-top:12px; }
+    .btn { padding:10px 12px; border-radius:10px; cursor:pointer; border:none; font-weight:700; }
+    .btn.leave { background:linear-gradient(135deg,#ff6b6b,#ff3b3b); color:#fff; }
+    .btn.copy { background:linear-gradient(135deg,#ffd700,#ffb300); color:#5a3a00; border:2px solid #ff9800; }
+    .btn.start { background:linear-gradient(135deg,#00bfff,#0080ff); color:#fff; border:2px solid #0066cc; opacity:0.5; cursor:not-allowed; }
+    .btn.start.enabled { opacity:1; cursor:pointer; }
+    .small { font-size:13px; color:#bbb; margin-top:8px; text-align:center; }
+    .toggle { display:flex; gap:8px; align-items:center; }
+    .toggle input { transform:scale(1.2); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="text-align:center;">
+      <div style="font-size:13px;color:#aaa">Room code</div>
+      <div class="room-code" id="roomCode">{{ room }}</div>
+      <div style="margin-top:8px;color:#ccc">You: <strong id="youName">{{ name }}</strong></div>
+      <div id="ownerTag" style="margin-top:6px;color:#aaf; font-size:13px;"></div>
+    </div>
+
+    <div class="controls">
+      <button id="copyBtn" class="btn copy">Copy code</button>
+      <button id="leaveBtn" class="btn leave">Leave room</button>
+      <button id="startBtn" class="btn start" title="Start game (owner only)">Start Game</button>
+    </div>
+
+    <div style="display:flex; justify-content:center; margin-top:8px;">
+      <!-- privacy toggle visible to owner only; JS will hide/show appropriately -->
+      <label id="privacyToggle" class="toggle" style="display:none;">
+        <input type="checkbox" id="isPrivateCheckbox" /> <span style="color:#ddd; margin-left:6px;">Private room</span>
+      </label>
+    </div>
+
+    <hr style="border:none; border-top:1px solid rgba(255,255,255,0.04); margin:14px 0;">
+    <div>
+      <div style="color:#bbb; font-weight:700; margin-bottom:8px;">Players in room</div>
+      <div id="membersList" class="members"></div>
+    </div>
+
+    <div id="statusMsg" class="small"></div>
+  </div>
+
+  <script>
+    const roomCode = "{{ room }}";
+    const userName = "{{ name }}";
+    const userId = {{ user_id if user_id else 'null' }};
+    
+    const socket = io();
+    
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      socket.emit('join_room', {
+        room: roomCode,
+        name: userName
+      });
+    });
+    
+    socket.on('room_joined', (data) => {
+      console.log('Room joined:', data);
+      document.getElementById('statusMsg').textContent = `Waiting for opponent... (${data.playerCount}/2)`;
+    });
+    
+    socket.on('room_update', (data) => {
+      console.log('Room update:', data);
+      const membersList = document.getElementById('membersList');
+      membersList.innerHTML = '';
+      
+      data.members.forEach(member => {
+        const div = document.createElement('div');
+        div.className = 'member';
+        div.innerHTML = `
+          <span>${member.name}</span>
+          <span style="color:#aaa;font-size:12px">${member.position}</span>
+        `;
+        membersList.appendChild(div);
+      });
+      
+      document.getElementById('statusMsg').textContent = `Players: ${data.playerCount}/2`;
+      
+      // Enable start button if 2 players
+      const startBtn = document.getElementById('startBtn');
+      if (data.playerCount === 2) {
+        startBtn.classList.add('enabled');
+        startBtn.disabled = false;
+      } else {
+        startBtn.classList.remove('enabled');
+        startBtn.disabled = true;
+      }
+    });
+    
+    socket.on('game_start', (data) => {
+      console.log('Game starting!');
+      document.getElementById('statusMsg').textContent = 'Game starting...';
+      // Redirect to game
+      setTimeout(() => {
+        window.location.href = `/multi?room=${roomCode}`;
+      }, 1000);
+    });
+    
+    socket.on('room_error', (data) => {
+      console.error('Room error:', data.error);
+      alert('Error: ' + data.error);
+    });
+    
+    // Copy button
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(roomCode).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    });
+    
+    // Leave button
+    document.getElementById('leaveBtn').addEventListener('click', () => {
+      window.location.href = '/';
+    });
+    
+    // Start button (triggers game start for all)
+    document.getElementById('startBtn').addEventListener('click', () => {
+      socket.emit('game_start', { room: roomCode });
+    });
+
+let isRoomOwner = false;
+
+fetch(`/api/room/info?code=${roomCode}`)
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      const info = data.room;
+      const toggleLabel = document.getElementById('privacyToggle');
+      const checkbox = document.getElementById('isPrivateCheckbox');
+      
+      // Set initial state
+      checkbox.checked = info.is_private;
+      
+      // Show only if current user is owner
+      if (info.owner_id === userId) {
+        isRoomOwner = true;
+        toggleLabel.style.display = 'flex';
+      }
+      
+      // When changed → update backend
+      checkbox.addEventListener('change', () => {
+        if (!isRoomOwner) return;
+        
+        fetch('/api/room/privacy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: roomCode,
+            is_private: checkbox.checked
+          })
+        })
+        .then(r => r.json())
+        .then(resp => {
+          if (resp.ok) {
+            console.log('Room privacy updated:', resp.room);
+          } else {
+            alert('Failed to update room privacy.');
+            checkbox.checked = !checkbox.checked; // revert
+          }
+        })
+        .catch(() => {
+          alert('Error updating privacy.');
+          checkbox.checked = !checkbox.checked;
+        });
+      });
+    }
+  });
+
+  </script>
+
+</body>
+</html>

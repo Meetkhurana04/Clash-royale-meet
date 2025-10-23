@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Royale</title>
+    <link rel="stylesheet" href="/static/home-style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <style>
+/* Social panel & form styles (inline theme) */
+.social-container {
+  display: none;
+  width: 100%;
+  padding: 14px;
+  box-sizing: border-box;
+  min-height: 300px;
+  color: #fff;
+  z-index: 10;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  margin: 14px auto;
+  padding: 18px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(10,10,10,0.98), rgba(25,25,25,0.95));
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,215,0,0.06);
+}
+
+.auth-tabs {
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+  justify-content:center;
+}
+
+.auth-tab {
+  padding:8px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:700;
+  color:#ccc;
+  background:transparent;
+  border:1px solid rgba(255,255,255,0.03);
+}
+.auth-tab.active {
+  color:#5a3a00;
+  background: linear-gradient(135deg,#ffd700,#ffb300);
+  box-shadow: 0 6px 14px rgba(255,183,0,0.08);
+  transform: translateY(-2px);
+}
+
+.auth-input {
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  margin-bottom:10px;
+  background: rgba(255,255,255,0.02);
+  border: 2px solid rgba(255,255,255,0.04);
+  color:#fff;
+  font-weight:600;
+  outline:none;
+}
+
+.auth-btn {
+  width:100%;
+  padding:10px;
+  border-radius:12px;
+  border:none;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:6px;
+}
+
+.auth-btn.primary {
+  background: linear-gradient(135deg,#ffd700,#ffb300);
+  color:#5a3a00;
+  border:3px solid #ff9800;
+}
+
+.auth-btn.secondary {
+  background: linear-gradient(135deg,#00bfff,#0080ff);
+  color:#fff;
+  border:3px solid #0066cc;
+}
+
+.profile-card {
+  max-width:420px;
+  margin:10px auto;
+  padding:16px;
+  border-radius:12px;
+  background: linear-gradient(180deg, rgba(8,8,8,0.95), rgba(18,18,18,0.95));
+  border:1px solid rgba(255,215,0,0.05);
+  text-align:center;
+}
+
+.profile-name {
+  font-size:20px;
+  color:#ffd700;
+  margin-bottom:6px;
+}
+
+.profile-email {
+  color:#aaa;
+  font-size:13px;
+  margin-bottom:8px;
+}
+
+.small-meta {
+  color:#bbb;
+  font-size:12px;
+  margin-top:8px;
+}
+
+/* helper notice */
+.auth-note {
+  color:#ffb3b3;
+  font-size:13px;
+  text-align:center;
+  margin-top:8px;
+}
+
+/* responsive tweaks */
+@media (max-width:480px) {
+  .auth-card { padding:12px; }
+  #logo { width: 260px; margin-left: 30px; }
+}
+</style>
+
+</head>
+<body>
+    <div class="game-container">
+        
+        <div class="gradient-bg"></div>
+        <div class="stars" id="stars"></div>
+       
+
+       
+            <img src="https://raw.githubusercontent.com/smlbiobot/cr/master/fan_kit/logo/ClashRoyale_logo_version_02.png" alt="trophy" id="logo" class="trophy-icon" >
+       
+
+            <!-- Arena Display -->
+            <div class="arena-container" id="arenaContainer">
+                
+                    <img src="/static/assets/home-page/arena-0.png" alt="arena" class="arena-image">
+                    <div class="arena-label">
+                        <span>Trainer Camp</span>
+                    
+                </div>
+            </div>
+
+            <!-- Deck Cards Display (Hidden by default) -->
+            <div class="deck-container" id="deckContainer" style="display: none;">
+                <div class="deck-cards-grid">
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/pekka-p.png" alt="pekka">
+                        </div>
+                        <div class="card-name">P.E.K.K.A</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">2.3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/valk-p.png" alt="valkyrie">
+                        </div>
+                        <div class="card-name">Valkyrie</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">1.3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/knight-p.png" alt="knight">
+                        </div>
+                        <div class="card-name">Knight</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">1</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/giant-p.png" alt="royal giant">
+                        </div>
+                        <div class="card-name">Royal Giant</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">1.5</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons " id="actionbutton">
+                <button class="battle-btn" onclick="window.location.href='/ball'">
+                    <span>Play from both sides</span>
+                </button>
+                <button class="party-btn" onclick="window.location.href='/ai'">
+                    <span>play with bot
+                    </span>
+                </button>
+               <button class="party-btn" id="openRoomModal" type="button" style="cursor:pointer;">
+                <span>play Online (room)</span>
+                </button>
+                </button>
+            </div>
+
+            <!-- Card Deck Preview
+            <div class="deck-preview">
+                <div class="deck-cards">
+                    <div class="card-slot">
+                        <img src="assets/knight-p.png" alt="knight">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/valk-p.png" alt="valkyrie">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/pekka-p.png" alt="pekka">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/giant-p.png" alt="giant">
+                    </div>
+                    <div class="card-slot empty"></div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- SOCIAL SECTION (paste after deck-container) -->
+<div class="social-container" id="socialContainer" aria-live="polite">
+
+  <!-- Auth card (login / register) -->
+  <div class="auth-card" id="authCard">
+    <div class="auth-tabs" role="tablist">
+      <div class="auth-tab active" id="tabLogin">Login</div>
+      <div class="auth-tab" id="tabRegister">Register</div>
+    </div>
+
+    <!-- Login form -->
+    <form id="loginForm" style="display:block;">
+      <input class="auth-input" id="loginUsername" placeholder="Username" required />
+      <input class="auth-input" id="loginPassword" placeholder="Password" type="password" required />
+      <div style="display:flex;gap:10px;">
+        <button type="button" id="loginBtn" class="auth-btn primary">Log In</button>
+        <button type="button" id="showRegisterBtn" class="auth-btn secondary">Go to Register</button>
+      </div>
+      <div id="loginError" class="auth-note" style="display:none;"></div>
+    </form>
+
+    <!-- Register form -->
+    <form id="registerForm" style="display:none;">
+      <input class="auth-input" id="regUsername" placeholder="Choose username" required />
+      <input class="auth-input" id="regEmail" placeholder="Email address" type="email" required />
+      <input class="auth-input" id="regPassword" placeholder="Choose a password" type="password" required />
+      <div style="display:flex;gap:10px;">
+        <button type="button" id="registerBtn" class="auth-btn primary">Create Account</button>
+        <button type="button" id="showLoginBtn" class="auth-btn secondary">Back to Login</button>
+      </div>
+      <div id="registerError" class="auth-note" style="display:none;"></div>
+    </form>
+  </div>
+
+  <!-- Profile card (shown when logged in) -->
+  <div id="profileCard" class="profile-card" style="display:none;">
+    <div class="profile-name" id="profileUsername">USERNAME</div>
+    <div class="profile-email" id="profileEmail">email@example.com</div>
+    <div class="small-meta" id="profileMeta">Member since: —</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+      <button id="logoutBtn" class="auth-btn secondary">Logout</button>
+      <button id="editProfileBtn" class="auth-btn primary">Edit</button>
+    </div>
+  </div>
+
+</div>
+
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item">
+                <div class="nav-icon">
+                    <img src="static/assets/home-page/cards-icon.png" alt="cards">
+                </div>
+                <span>Cards</span>
+            </button>
+            <button class="nav-item active">
+                <div class="nav-icon">
+                    <img src="static/assets/home-page/sword.png" alt="battle">
+                </div>
+                <span>Battle</span>
+            </button>
+            <button class="nav-item">
+                <div class="nav-icon">
+                    <img src="https://raw.githubusercontent.com/smlbiobot/cr/master/ui/leagues/league-champion-grand.png" alt="social">
+                </div>
+                <span>Social</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ROOM MODAL (paste before </body>) -->
+<div id="roomModal" style="display:none; position:fixed; inset:0; z-index:99999; 
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items:center; justify-content:center;">
+  <div role="dialog" aria-modal="true" aria-labelledby="roomTitle"
+       style="width:92%; max-width:420px; border-radius:14px; padding:18px; 
+              background: linear-gradient(180deg, rgba(10,10,10,0.98), rgba(20,20,20,0.98)); 
+              box-shadow: 0 12px 40px rgba(0,0,0,0.7); position:relative; margin:auto;">
+    
+    <!-- Close btn -->
+    <button id="closeRoomModal" aria-label="Close" type="button"
+            style="position:absolute; right:12px; top:12px; background:transparent; border:none; color:#fff; 
+                   font-size:20px; cursor:pointer;">✕</button>
+
+    <!-- Title -->
+    <h3 id="roomTitle" style="color:#ffd700; margin:0 0 8px 0; font-size:20px; text-align:center;">
+      Play Online — Room
+    </h3>
+
+    <p style="color:#ccc; font-size:13px; text-align:center; margin:0 0 12px 0;">
+      Join an existing room or create a new one. Enter your display name below.
+    </p>
+
+    <!-- Form (posts to / ) -->
+    <form id="roomForm" action="/" method="POST" style="display:flex; flex-direction:column; gap:10px;">
+      <!-- display name -->
+      <input name="name" id="roomName" type="text" placeholder="Your name" required
+             style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid rgba(255,215,0,0.12); 
+                    background:rgba(255,255,255,0.03); color:#fff; outline:none; font-weight:600;" />
+
+      <!-- room code (for join) -->
+      <input name="code" id="roomCode" type="text" placeholder="Room code (for join)" maxlength="8" 
+             style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid rgba(255,255,255,0.06);
+                    background:rgba(255,255,255,0.02); color:#fff; font-weight:600;" />
+
+      <!-- hidden inputs for server logic -->
+      <input type="hidden" name="join" id="roomJoin" value="">
+      <input type="hidden" name="create" id="roomCreate" value="">
+
+      <!-- inline error text -->
+      <div id="roomError" style="display:none; color:#ff8a8a; font-size:13px; text-align:center;"></div>
+
+      <!-- Buttons row -->
+      <div style="display:flex; gap:10px; margin-top:4px;">
+        <!-- Create (will request creation of new room) -->
+        <button id="createRoomBtn" type="button" 
+                style="flex:1; padding:10px 12px; border-radius:12px; border:2px solid #ff9800; 
+                       background:linear-gradient(135deg,#ffd700,#ffb300); color:#5a3a00; font-weight:700; cursor:pointer;">
+          Create Room
+        </button>
+
+        <!-- Join (will submit join) -->
+        <button id="joinRoomBtn" type="button" 
+                style="flex:1; padding:10px 12px; border-radius:12px; border:2px solid #0066cc; 
+                       background:linear-gradient(135deg,#00bfff,#0080ff); color:#fff; font-weight:700; cursor:pointer;">
+          Join Room
+        </button>
+      </div>
+
+      <!-- small helper text -->
+      <p style="color:#999; font-size:12px; margin:8px 0 0 0; text-align:center;">
+        Creating a room generates a 4-letter code for others to join.
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ---------- existing star code (keep) ---------- */
+const starsContainer = document.getElementById('stars');
+if (starsContainer && starsContainer.children.length === 0) {
+  for (let i = 0; i < 150; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = `${Math.random() * 100}%`;
+    star.style.top = `${Math.random() * 100}%`;
+    star.style.animation = `twinkle ${2 + Math.random() * 3}s infinite ${Math.random() * 2}s`;
+    starsContainer.appendChild(star);
+  }
+}
+
+/* ---------- DOM references ---------- */
+const navItems = document.querySelectorAll('.nav-item');
+const arenaContainer = document.getElementById('arenaContainer');
+const deckContainer = document.getElementById('deckContainer');
+const socialContainer = document.getElementById('socialContainer');
+const actionbutton = document.getElementById('actionbutton');
+
+/* ---------- helper: show only one main panel ---------- */
+function showPanel(panel) {
+  // hide all three
+  if (arenaContainer) arenaContainer.style.display = 'none';
+  if (deckContainer) deckContainer.style.display = 'none';
+  if (socialContainer) socialContainer.style.display = 'none';
+
+  // show requested
+  if (panel === 'arena' && arenaContainer) arenaContainer.style.display = 'flex';
+  if (panel === 'deck' && deckContainer) deckContainer.style.display = 'block';
+  if (panel === 'social' && socialContainer) socialContainer.style.display = 'block';
+}
+
+/* ---------- nav items click behavior ---------- */
+navItems.forEach((item, index) => {
+  item.addEventListener('click', function() {
+    navItems.forEach(nav => nav.classList.remove('active'));
+    this.classList.add('active');
+
+    if (index === 0) {
+      showPanel('deck');       // Cards
+      if (actionbutton) actionbutton.style.display = 'none';
+    } else if (index === 1) {
+      showPanel('arena');      // Battle
+      if (actionbutton) actionbutton.style.display = '';
+    } else {
+      showPanel('social');     // Social
+      if (actionbutton) actionbutton.style.display = 'none';
+      renderSocial();          // ensure social content updates
+    }
+  });
+});
+
+/* ---------- AUTH storage helpers (client-only simulation) ---------- */
+function getUsers() {
+  try {
+    return JSON.parse(localStorage.getItem('cr_users') || '{}');
+  } catch(e) { return {}; }
+}
+function setUsers(obj) {
+  localStorage.setItem('cr_users', JSON.stringify(obj));
+}
+function setAuthUser(userObj) {
+  localStorage.setItem('cr_authUser', JSON.stringify(userObj));
+}
+function getAuthUser() {
+  try { return JSON.parse(localStorage.getItem('cr_authUser') || 'null'); }
+  catch(e) { return null; }
+}
+function clearAuth() {
+  localStorage.removeItem('cr_authUser');
+}
+
+/* ---------- UI references: auth ---------- */
+const tabLogin = document.getElementById('tabLogin');
+const tabRegister = document.getElementById('tabRegister');
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const loginBtn = document.getElementById('loginBtn');
+const registerBtn = document.getElementById('registerBtn');
+const showRegisterBtn = document.getElementById('showRegisterBtn');
+const showLoginBtn = document.getElementById('showLoginBtn');
+const loginError = document.getElementById('loginError');
+const registerError = document.getElementById('registerError');
+
+const loginUsername = document.getElementById('loginUsername');
+const loginPassword = document.getElementById('loginPassword');
+const regUsername = document.getElementById('regUsername');
+const regEmail = document.getElementById('regEmail');
+const regPassword = document.getElementById('regPassword');
+
+const profileCard = document.getElementById('profileCard');
+const profileUsername = document.getElementById('profileUsername');
+const profileEmail = document.getElementById('profileEmail');
+const profileMeta = document.getElementById('profileMeta');
+const logoutBtn = document.getElementById('logoutBtn');
+const editProfileBtn = document.getElementById('editProfileBtn');
+
+/* ---------- Tab switching ---------- */
+tabLogin.addEventListener('click', () => {
+  tabLogin.classList.add('active'); tabRegister.classList.remove('active');
+  loginForm.style.display = 'block'; registerForm.style.display = 'none';
+});
+tabRegister.addEventListener('click', () => {
+  tabRegister.classList.add('active'); tabLogin.classList.remove('active');
+  registerForm.style.display = 'block'; loginForm.style.display = 'none';
+});
+showRegisterBtn.addEventListener('click', () => tabRegister.click());
+showLoginBtn.addEventListener('click', () => tabLogin.click());
+
+/* ---------- Register logic (client-only) ---------- */
+registerBtn.addEventListener('click', () => {
+  registerError.style.display = 'none';
+  const u = regUsername.value.trim();
+  const e = regEmail.value.trim();
+  const p = regPassword.value;
+
+  if (!u || !e || !p) {
+    registerError.style.display = 'block'; registerError.textContent = 'Please fill all fields.';
+    return;
+  }
+
+  // basic validations
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(u)) {
+    registerError.style.display = 'block';
+    registerError.textContent = 'Username: 3-20 chars (letters, numbers, _)';
+    return;
+  }
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(e)) {
+    registerError.style.display = 'block';
+    registerError.textContent = 'Enter a valid email address.';
+    return;
+  }
+  if (p.length < 5) {
+    registerError.style.display = 'block';
+    registerError.textContent = 'Password should be at least 5 characters.';
+    return;
+  }
+
+  const users = getUsers();
+  if (users[u]) {
+    registerError.style.display = 'block';
+    registerError.textContent = 'Username already taken.';
+    return;
+  }
+
+  // store user (note: in real app never store plain password in localStorage)
+  users[u] = { username: u, email: e, password: p, created_at: new Date().toISOString() };
+  setUsers(users);
+
+  // auto-login after register
+  setAuthUser({ username: u, email: e, created_at: users[u].created_at });
+  renderSocial();
+
+  // feedback
+  registerError.style.display = 'block';
+  registerError.style.color = '#aef2b1';
+  registerError.textContent = 'Account created & logged in!';
+});
+
+/* ---------- Login logic (client-only) ---------- */
+loginBtn.addEventListener('click', () => {
+  loginError.style.display = 'none';
+  const u = loginUsername.value.trim();
+  const p = loginPassword.value;
+  if (!u || !p) {
+    loginError.style.display = 'block'; loginError.textContent = 'Enter username and password.';
+    return;
+  }
+  const users = getUsers();
+  if (!users[u] || users[u].password !== p) {
+    loginError.style.display = 'block'; loginError.textContent = 'Invalid credentials.';
+    return;
+  }
+  setAuthUser({ username: u, email: users[u].email, created_at: users[u].created_at });
+  renderSocial();
+});
+
+/* ---------- Logout ---------- */
+logoutBtn.addEventListener('click', () => {
+  clearAuth();
+  renderSocial();
+  // switch to social panel but show login form
+  tabLogin.click();
+});
+
+/* ---------- Edit profile button (client side UI only) ---------- */
+editProfileBtn.addEventListener('click', () => {
+  // simple inline edit prompt (client-only)
+  const auth = getAuthUser();
+  if (!auth) return;
+  const newEmail = prompt('Update email:', auth.email || '');
+  if (newEmail && /^[^@]+@[^@]+\.[^@]+$/.test(newEmail)) {
+    const users = getUsers();
+    if (users[auth.username]) {
+      users[auth.username].email = newEmail;
+      setUsers(users);
+      setAuthUser({ ...auth, email: newEmail });
+      renderSocial();
+      alert('Email updated locally.');
+    }
+  } else if (newEmail) {
+    alert('Invalid email.');
+  }
+});
+
+/* ---------- Render social UI based on auth ---------- */
+function renderSocial() {
+  const auth = getAuthUser();
+  if (auth) {
+    // show profile card
+    profileCard.style.display = 'block';
+    profileUsername.textContent = auth.username || 'Player';
+    profileEmail.textContent = auth.email || '—';
+    profileMeta.textContent = 'Member since: ' + (new Date(auth.created_at || Date.now())).toLocaleDateString();
+    // hide auth card
+    document.getElementById('authCard').style.display = 'none';
+    // enable room modal button
+    enableRoomAccess(true);
+  } else {
+    profileCard.style.display = 'none';
+    document.getElementById('authCard').style.display = 'block';
+    // ensure login tab shown
+    tabLogin.click();
+    enableRoomAccess(false);
+  }
+}
+
+/* ---------- enable/disable room modal trigger ---------- */
+function enableRoomAccess(enabled) {
+  const openBtn = document.getElementById('openRoomModal');
+  if (!openBtn) return;
+  openBtn.disabled = !enabled;
+  if (enabled) {
+    openBtn.style.cursor = 'pointer';
+    openBtn.style.opacity = '1';
+    openBtn.title = 'Open room modal';
+  } else {
+    openBtn.style.cursor = 'not-allowed';
+    openBtn.style.opacity = '0.7';
+    openBtn.title = 'Login required to create/join rooms';
+  }
+}
+
+/* ---------- when page loads, initialize UI ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  // render initial social panel if social tab is active already
+  renderSocial();
+
+  // if user clicks "play online" and is not logged in, promote login
+  const openRoomModal = document.getElementById('openRoomModal');
+  if (openRoomModal) {
+    openRoomModal.addEventListener('click', (e) => {
+      const auth = getAuthUser();
+      if (!auth) {
+        // switch to social tab and show login
+        // visually mark social tab active
+        navItems.forEach(nav => nav.classList.remove('active'));
+        const socialNav = navItems[2];
+        if (socialNav) socialNav.classList.add('active');
+        showPanel('social');
+        renderSocial();
+        // show a friendly note
+        const loginErr = document.getElementById('loginError');
+        if (loginErr) { loginErr.style.display = 'block'; loginErr.style.color = '#ffb3b3'; loginErr.textContent = 'Please login or register to create/join rooms.'; }
+        // don't open room modal
+        e.preventDefault();
+      } else {
+        // open room modal as before
+        // (assuming your modal open button logic triggers the modal)
+      }
+    });
+  }
+});
+</script>
+
+</body>
+</html>

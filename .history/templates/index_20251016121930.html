@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Royale</title>
+    <link rel="stylesheet" href="/static/home-style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+</head>
+<body>
+    <div class="game-container">
+        
+        <div class="gradient-bg"></div>
+        <div class="stars" id="stars"></div>
+       
+
+       
+            <img src="https://raw.githubusercontent.com/smlbiobot/cr/master/fan_kit/logo/ClashRoyale_logo_version_02.png" alt="trophy" id="logo" class="trophy-icon" >
+       
+
+            <!-- Arena Display -->
+            <div class="arena-container" id="arenaContainer">
+                
+                    <img src="/static/assets/home-page/arena-0.png" alt="arena" class="arena-image">
+                    <div class="arena-label">
+                        <span>Trainer Camp</span>
+                    
+                </div>
+            </div>
+
+            <!-- Deck Cards Display (Hidden by default) -->
+            <div class="deck-container" id="deckContainer" style="display: none;">
+                <div class="deck-cards-grid">
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/pekka-p.png" alt="pekka">
+                        </div>
+                        <div class="card-name">P.E.K.K.A</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">2.3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/valk-p.png" alt="valkyrie">
+                        </div>
+                        <div class="card-name">Valkyrie</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">1.3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/knight-p.png" alt="knight">
+                        </div>
+                        <div class="card-name">Knight</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">1</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/giant-p.png" alt="royal giant">
+                        </div>
+                        <div class="card-name">Royal Giant</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">1.5</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons " id="actionbutton">
+                <button class="battle-btn" onclick="window.location.href='/ball'">
+                    <span>Play from both sides</span>
+                </button>
+                <button class="battle-btn onclick="window.location.href='/ball'">
+                    <span>play with bot
+                    </span>
+                </button>
+                <button class="party-btn">
+                    <span>play Online (room)
+                    </span>
+                </button>
+            </div>
+
+            <!-- Card Deck Preview
+            <div class="deck-preview">
+                <div class="deck-cards">
+                    <div class="card-slot">
+                        <img src="assets/knight-p.png" alt="knight">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/valk-p.png" alt="valkyrie">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/pekka-p.png" alt="pekka">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/giant-p.png" alt="giant">
+                    </div>
+                    <div class="card-slot empty"></div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item">
+                <div class="nav-icon">
+                    <img src="static/assets/home-page/cards-icon.png" alt="cards">
+                </div>
+                <span>Cards</span>
+            </button>
+            <button class="nav-item active">
+                <div class="nav-icon">
+                    <img src="static/assets/home-page/sword.png" alt="battle">
+                </div>
+                <span>Battle</span>
+            </button>
+            <button class="nav-item">
+                <div class="nav-icon">
+                    <img src="https://raw.githubusercontent.com/smlbiobot/cr/master/ui/leagues/league-champion-grand.png" alt="social">
+                </div>
+                <span>Social</span>
+            </button>
+        </div>
+    </div>
+    <script>
+        // Create twinkling stars
+        
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animation = `twinkle ${2 + Math.random() * 3}s infinite ${Math.random() * 2}s`;
+            starsContainer.appendChild(star);
+        }
+
+        // Toggle between arena and deck cards
+        const navItems = document.querySelectorAll('.nav-item');
+        const arenaContainer = document.getElementById('arenaContainer');
+        const deckContainer = document.getElementById('deckContainer');
+        const actionbutton = document.getElementById('actionbutton');
+        
+        navItems.forEach((item, index) => {
+            item.addEventListener('click', function() {
+                // Remove active class from all nav items
+                navItems.forEach(nav => nav.classList.remove('active'));
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // Toggle display based on which nav item is clicked
+                if (index === 0) { // Cards button
+                    arenaContainer.style.display = 'none';
+                    deckContainer.style.display = 'block';
+                    actionbutton.style.display = 'none';
+
+                } else if (index === 1) { // Battle button
+                    arenaContainer.style.display = 'flex';
+                    deckContainer.style.display = 'none';
+                    actionbutton.style.display = '';
+                   
+                } else { // Social button
+                    arenaContainer.style.display = 'none';
+                    deckContainer.style.display = 'block';
+                    actionbutton.style.display = 'none';
+
+                }
+            });
+        });
+    </script>
+</body>
+</html>

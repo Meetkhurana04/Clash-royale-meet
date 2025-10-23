@@ -1,0 +1,298 @@
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask_socketio import SocketIO, join_room as fs_join_room, leave_room as fs_leave_room, emit
+import random
+from string import ascii_uppercase
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
+app = Flask(__name__)
+app.secret_key = "your_secret_key_here"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+socketio = SocketIO(app, manage_session=False)
+
+# in-memory mapping: room_code -> { sid: username }
+room_members = {}
+
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(180), unique=True, nullable=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "created_at": self.created_at.isoformat()
+        }
+
+class Room(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), unique=True, nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    members = db.Column(db.Integer, default=0)
+    is_private = db.Column(db.Boolean, default=False)   # <-- new
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "code": self.code,
+            "owner_id": self.owner_id,
+            "members": self.members,
+            "is_private": bool(self.is_private),
+            "created_at": self.created_at.isoformat()
+        }
+
+def roomcode(length=4):
+    while True:
+        code = "".join(random.choice(ascii_uppercase) for _ in range(length))
+        if not Room.query.filter_by(code=code).first() and code not in room_members:
+            return code
+
+def current_user():
+    uid = session.get('user_id')
+    # uid me hum session se user id nikal lenge 
+    if not uid:
+        return None # agar nhi h toh none dedenge 
+    # agar h toh hum database se nikalwaldenge 
+    return User.query.get(uid)
+# Ye line database se ek specific user record nikalti hai — jiska primary key (ID) uid hota hai.
+
+@app.route("/initdb")
+def initdb():
+    db.create_all()
+    return "DB created"
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    if request.method == "GET":
+        return render_template("index.html")
+
+    # POST -> create or join room
+    user = current_user()
+    if not user:
+        return render_template("index.html", error="You must be logged in to create or join rooms.")
+
+    name = request.form.get("name") or user.username
+    code = request.form.get("code", "").strip().upper()
+    join = request.form.get("join", "")
+    create = request.form.get("create", "")
+    is_private_flag = request.form.get("is_private", False)  # optional from form (checkbox)
+
+    if not name:
+        return render_template("index.html", error="Please enter a name")
+
+    if join and not code:
+        return render_template("index.html", error="Please enter a room code to join")
+
+    room_code = code
+    if create:
+        room_code = roomcode(4)
+        new_room = Room(code=room_code, owner_id=user.id, members=0, is_private=(is_private_flag == "1"))
+        # upar waali line new row bnayegi humare room wale table me 
+        db.session.add(new_room) # yeh chij btayega ki m ready hu add krdna yeh temporary memory store horhi hoti h 
+        db.session.commit() # yeh chij h ki jo jo chij session me aayi h use commit krdo
+        # you cant commit directly without add add kro then commit yeh hi procedure h 
+    else:
+        # join: validate room exists and not full and not private (unless owner)
+        db_room = Room.query.filter_by(code=room_code).first()
+        # “Room table me us room ko dhoondo jiska code room_code ke barabar hai, aur uska pehla record le aao.”
+        if not db_room:
+            return render_template("index.html", error="No such room.")
+        if db_room.is_private and db_room.owner_id != user.id:
+            return render_template("index.html", error="Room is private.")
+        # Use DB count as a pre-check (socket-level also enforces)
+        if db_room.members >= 2:
+            return render_template("index.html", error="Room is full.")
+
+    # set session values and redirect to room page (not ball)
+    session["room"] = room_code
+    session["name"] = name
+    # Yeh lines data store kar rahi hain Flask ke session object me.
+    return redirect(url_for("room_page"))
+
+@app.route("/room")
+def room_page():
+    if "room" not in session or "name" not in session:
+        return redirect(url_for("home"))
+    # yeh def home wale funciton pe redirect krdega not url
+    room_code = session["room"]
+    name = session["name"]
+    # yeh lines session se data read kar rhi h 
+    user = current_user()
+    # yeh kya krega humra crrentuser wala inbuitl functin chalayega
+    # yeh wala function phle toh try krega ki session se ajaye but agar session se nhi aati toh 
+    # agar uid  nhi h toh none return krdo ki login failed h 
+    # if uid miljaati h exist krti h toh database user table me jaake primarykey = uid wales user ko fetch krt ah 
+
+    user_id = user.id if user else None
+    # user_id agar user exist krta h toh = user id hoga nhi toh none hoga 
+    # agar user = none arha hota toh yha pe bhi user_id = none hota 
+    return render_template("room.html", room=room_code, name=name, user_id=user_id)
+
+@app.route("/ball")
+def ball_page():
+    ai_mode = False
+    return render_template("ball.html", ai_mode=ai_mode)
+
+@app.route("/multi")
+def multi():
+    multi = True
+    ai_mode = False
+    room = request.args.get("room")
+    return render_template("ball.html",multi=multi,ai_mode=ai_mode ,room=room)
+
+@app.route("/ai")
+def ai():
+    ai_mode = True
+    return render_template("ball.html", ai_mode=ai_mode)
+
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    username = request.form.get("username") or (request.json and request.json.get("username"))
+    email = request.form.get("email") or (request.json and request.json.get("email"))
+    password = request.form.get("password") or (request.json and request.json.get("password"))
+    # yeh teeno upar ki line username email and password derhi h extract kr rhi h 
+    # jisme woh phla try request.form.get se krti h dusra request.json se 
+    # yeh teeno kisi bhi ek source se data leke arhi h 
+    if not username or not password or not email:
+        # agaar usernamme nhi h ya pasword nhi h ya email toh yeh return krdo
+        # Agar user ne username, password ya email nahi dala,
+        # Server turant error JSON bhejega + 400 status code, aur aage ka registration ka code run nahi hoga.
+        return jsonify({"ok": False, "error": "username, email and password required"}), 400
+    username = username.strip()
+    if User.query.filter_by(username=username).first():
+        # apne jo username daala h voh chek bhi toh hoga 
+        # ki yeh username aap rkh skte ho ya nhi 
+        return jsonify({"ok": False, "error": "username taken"}), 400
+    if User.query.filter_by(email=email).first():
+        # same for email chekc krenge and return krenge 
+        return jsonify({"ok": False, "error": "email already used"}), 400
+
+    pw_hash = generate_password_hash(password)
+    # password ko safe format me convert krna jisse database me sotre hojaaye 
+    # ek werkzeug library h  hash me convert krdega one time encryption h password wapsi nhi laskte h 
+    u = User(username=username, email=email, password_hash=pw_hash)
+    # ab hum apne database me yeh sb add kar rhe honge
+    db.session.add(u)
+    # session ko add kro and then commit kro 
+    db.session.commit()
+
+    session['user_id'] = u.id # session me bhi add krdenge 
+    return jsonify({"ok": True, "user": u.to_dict()})
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    username = request.form.get("username") or (request.json and request.json.get("username"))
+    password = request.form.get("password") or (request.json and request.json.get("password"))
+    # ab koi login krne aaya h toh phle saari chije mngwalete h 
+    if not username or not password:
+        # agar dono me se kuch bhi missing h toh 
+        # yhi se aap alag alag kar paaoge
+        return jsonify({"ok": False, "error": "username & password required"}), 400
+    u = User.query.filter_by(username=username).first()
+    # username=usernmaeeee krke yeh search krega 
+    if not u or not check_password_hash(u.password_hash, password):
+        # ab hum check kr rhe hote h ki if not u kya username nhi h or chekc pasword hash ek inbuilt fucniton jo ek trf toh db se pasword lega or ek trf huamra fomr wala or check karega ki kya yeh sb hoskta h 
+        return jsonify({"ok": False, "error": "invalid credentials"}), 401
+    session['user_id'] = u.id
+    # jb tk session valid h yeh yaad rkhega 
+    return jsonify({"ok": True, "user": u.to_dict()})
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    session.pop('user_id', None)
+    session.pop('room', None)
+    session.pop('name', None)
+    # teeno chij nikaldo session se 
+    return jsonify({"ok": True})
+
+@app.route("/api/auth")
+# yeh /api/auth pe jb request aayegi toh yeh function chlega 
+def api_auth():
+    u = current_user()
+#     u = User(
+#   id=1,
+#   username="meet123",
+#   password_hash="xyz...",
+#   name="Meet"
+# )
+# toh yeh line madad krenge current_user() krke usko ek varaible me store krenge
+    if not u:
+        return jsonify({"ok": False, "user": None})
+    # agar u nhi ata none ata h toh yeh return hoga nhi toh 
+    # niche wala return hoga 
+    return jsonify({"ok": True, "user": u.to_dict()})
+
+
+@socketio.on("join_room")
+# jb bhi client join room event emit krta h browser se toh yeh niche wala function chlta h 
+def handle_join_room(data):
+    # yeh data ek dicitionary type h kuch 
+    # data = {"room": "level1", "name": "Meet"}
+    # toh hum kh rhe h ki data wali dictionary me room ko nikal ke de 
+    room = data.get("room")
+    if not room:
+        # agar room nhi h toh h toh ek "room error " naam ka server pe bhejo yeh chij 
+        # fir socket.on("room-error") se handle ki jaayegi 
+        emit("room_error", {"error": "Missing room"}, to=request.sid)
+        return
+    try:
+        # tr catch block me wrap krdiya h this means try join join_room(room )
+        # and this is room name 
+        fs_join_room(room)
+        # send single-client confirmation
+        # join hone ke baad "room joined naam ka event bhejo to=request.sid ; agar pure room me bhejna h toh to=room.sid"
+        emit("room_joined", {"room": room}, to=request.sid)
+        # also send room_update to everyone in that room (optional)
+        members = room_members.get(room, {})
+        # members laake do us room me ; yeh room members naam ki dictionary h 
+        # mujhe room mebers mese room ki value laake do if not exist return empty{}
+        member_names = [m["name"] for m in members.values()] if members else []
+
+        emit("room_update", {"room": room, "members": member_names}, room=room)
+
+    except Exception as e:
+        app.logger.exception("join_room failed")
+        emit("room_error", {"error": "Failed to join room"}, to=request.sid)
+
+# Socket events
+@socketio.on("spawn_character")
+def handle_spawn(data):
+    room = data.get("room")
+    data["sender_sid"] = request.sid  # mark sender
+    # broadcast to the room except the sender
+    emit("spawn_character", data, to=room, skip_sid=request.sid)
+
+@socketio.on("join")
+def handle_join(data):
+    """
+    data = { "room": "ABCD", "name": "player1", "user_id": 3 }
+    """
+    room = data.get("room")
+    name = data.get("name")
+    user_id = data.get("user_id")
+    sid = request.sid
+
+    if not room or not name:
+        return
+
+    # check db room exist & privacy
+    db_room = Room.query.filter_by(code=room).first()
+    if not db_room:
+        m
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+    
+    socketio.run(app, debug=True)

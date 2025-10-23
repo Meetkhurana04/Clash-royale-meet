@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meet</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+</head>
+<body>
+    <div class="gradient-bg"></div>
+        <div class="stars" id="stars"></div>
+ 
+  <img src="static/assets/bg-img.jpeg" id= "bg-img">
+  <!-- towers -->
+  <img src="static/assets/opp-archer.png" id="opp-archer">
+  <img src="static/assets/opp-king.png" id="opp-king">
+  <img src="static/assets/our-archer.png" id="our-archer">
+  <img src="static/assets/our-king.png" id="our-king">
+
+  <!-- <img src="assets/elixir-bar.png" id = 'opp-bar'> -->
+<div id="game-wrapper" style="position:relative; width:480px; height:720px;">
+  <!-- Canvas -->
+  <canvas id="canvas" width="480" height="720"
+          ></canvas>
+
+  <!-- Background/towers (hidden, used for ctx.drawImage) -->
+  <img src="static/assets/bg-img.jpeg" id="bg-img" style="display:none;">
+  <img src="static/assets/opp-archer.png" id="opp-archer0" style="display:none;">
+  <img src="static/assets/opp-archer.png" id="opp-archer1" style="display:none;">
+
+  <img src="static/assets/opp-king.png" id="opp-king" style="display:none;">
+  <img src="static/assets/our-archer.png" id="our-archer0" style="display:none;">
+  <img src="static/assets/our-archer.png" id="our-archer1" style="display:none;">
+
+  <img src="static/assets/our-king.png" id="our-king" style="display:none;">
+
+  <!-- Our deck -->
+  <img src="static/assets/knight-p.png" id="our-knight" draggable="true"
+       ondragstart="onDragStart(event, 'knight','our')">
+  <img src="static/assets/valk-p.png" id="our-valk" draggable="true"
+       ondragstart="onDragStart(event, 'valkyrie','our')">
+  <img src="static/assets/pekka-p.png" id="our-pekka" draggable="true"
+       ondragstart="onDragStart(event, 'pekka','our')">
+  <img src="static/assets/giant-p.png" id="our-royal_giant" draggable="true"
+       ondragstart="onDragStart(event, 'royal_giant','our')">
+
+  <!-- Our bar -->
+  <img src="static/assets/elixir-bar.png" id="our-bar">
+
+  <!-- Opp deck -->
+  <img src="static/assets/knight-p.png" id="opp-knight" draggable="true"
+       ondragstart="onDragStart(event, 'knight','opp')">
+  <img src="static/assets/valk-p.png" id="opp-valk" draggable="true"
+       ondragstart="onDragStart(event, 'valkyrie','opp')">
+  <img src="static/assets/pekka-p.png" id="opp-pekka" draggable="true"
+       ondragstart="onDragStart(event, 'pekka','opp')">
+  <img src="static/assets/giant-p.png" id="opp-royal_giant" draggable="true"
+       ondragstart="onDragStart(event, 'royal_giant','opp')">
+
+  <!-- Opp bar -->
+  <img src="static/assets/elixir-bar.png" id="opp-bar">
+
+  <!-- crown -->
+  <img src="static/assets/crown-blue.png" id="crownblue" style="display:none;">
+  <img src="static/assets/crown-red.png" id="crownred" style="display:none;">
+
+  <!-- crown cusshion -->
+  <img src="static/assets/red-cushion.png" id="cushionred" style="display:none;">
+  <img src="static/assets/blue-cushion.png" id="cushionblue" style="display:none;">
+
+</div>
+   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+  // expose globals used by game-logic.js
+  window.ai_mode = {{ ai_mode | tojson }};
+  window.multi   = {{ multi | tojson }};
+  window.roomId  = "{{ room|default('') }}";
+  if (!window.roomId) window.roomId = localStorage.getItem('room') || "";
+
+  // global socket reference
+  window.socket = io();
+
+  // guard: only emit spawns after we've actually joined the socket room
+  window.hasJoinedRoom = false;
+
+  // debug helpers
+  window.socket.on('connect', () => console.log('socket connected', window.socket.id));
+  window.socket.on('disconnect', () => console.log('socket disconnected'));
+
+  // server confirms room join (this event name must match server)
+  window.socket.on('room_joined', (d) => {
+    console.log('room_joined', d);
+    if (d && d.room === window.roomId) {
+      window.hasJoinedRoom = true;
+    }
+  });
+
+  // fallback: if server sends room_update for this room we can treat it as joined
+  window.socket.on('room_update', (d) => {
+    console.log('room_update', d);
+    if (d && d.room === window.roomId) {
+      window.hasJoinedRoom = true;
+    }
+  });
+
+  // Optional: listen for spawn events from other client
+  window.socket.on('spawn_character', (data) => {
+    console.log('spawn_character received', data);
+    // mirror and reconstruct coordinates (game-logic.js will also handle this if you want)
+    const mirroredOpp = data.opp_or_not === 'our' ? 'opp' : 'our';
+    if (typeof data.xPct === 'number' && typeof data.yPct === 'number') {
+      const x = Math.round(canvas.width * data.xPct);
+      const y = Math.round(canvas.height * data.yPct);
+      const mirroredY = canvas.height - y - (playersize / 2);
+      makeActive(data.type, x, mirroredY , mirroredOpp, true);
+    } else {
+      const mirroredX = (canvas.width || 1280) - data.x - (playersize/2);
+      makeActive(data.type, mirroredX, data.y, mirroredOpp, true);
+    }
+  });
+
+  // Request to join the room on connect (either use existing join server handler or add join_room on server)
+  window.socket.on('connect', () => {
+    if (window.multi && window.roomId) {
+      // If server expects 'join' with name/user_id then emit 'join' instead.
+      // Here we emit a simple join_room; ensure server has a handler for it.
+      window.socket.emit('join_room', { room: window.roomId });
+      console.log('emitted join_room', window.roomId);
+    }
+  });
+</script>
+     
+     <script src="/static/game-logic.js"></script>
+     
+    
+        
+
+</body>
+</html>
+

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Royale</title>
+    <link rel="stylesheet" href="/static/home-style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+</head>
+<body>
+    <div class="game-container">
+        
+        <div class="gradient-bg"></div>
+        <div class="stars" id="stars"></div>
+       
+
+       
+            <img src="https://raw.githubusercontent.com/smlbiobot/cr/master/fan_kit/logo/ClashRoyale_logo_version_02.png" alt="trophy" id="logo" class="trophy-icon" >
+       
+
+            <!-- Arena Display -->
+            <div class="arena-container" id="arenaContainer">
+                
+                    <img src="/static/assets/home-page/arena-0.png" alt="arena" class="arena-image">
+                    <div class="arena-label">
+                        <span>Trainer Camp</span>
+                    
+                </div>
+            </div>
+
+            <!-- Deck Cards Display (Hidden by default) -->
+            <div class="deck-container" id="deckContainer" style="display: none;">
+                <div class="deck-cards-grid">
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/pekka-p.png" alt="pekka">
+                        </div>
+                        <div class="card-name">P.E.K.K.A</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">2.3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/valk-p.png" alt="valkyrie">
+                        </div>
+                        <div class="card-name">Valkyrie</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">1.3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/knight-p.png" alt="knight">
+                        </div>
+                        <div class="card-name">Knight</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">1</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deck-card">
+                        <div class="card-image">
+                            <img src="static/assets/giant-p.png" alt="royal giant">
+                        </div>
+                        <div class="card-name">Royal Giant</div>
+                        <div class="card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Power:</span>
+                                <span class="stat-value">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">1.5</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elixir:</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons " id="actionbutton">
+                <button class="battle-btn" onclick="window.location.href='/ball'">
+                    <span>Play from both sides</span>
+                </button>
+                <button class="party-btn" onclick="window.location.href='/ai'">
+                    <span>play with bot
+                    </span>
+                </button>
+               <button class="party-btn" id="openRoomModal" type="button" style="cursor:pointer;">
+                <span>play Online (room)</span>
+</button>
+                </button>
+            </div>
+
+            <!-- Card Deck Preview
+            <div class="deck-preview">
+                <div class="deck-cards">
+                    <div class="card-slot">
+                        <img src="assets/knight-p.png" alt="knight">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/valk-p.png" alt="valkyrie">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/pekka-p.png" alt="pekka">
+                    </div>
+                    <div class="card-slot">
+                        <img src="assets/giant-p.png" alt="giant">
+                    </div>
+                    <div class="card-slot empty"></div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item">
+                <div class="nav-icon">
+                    <img src="static/assets/home-page/cards-icon.png" alt="cards">
+                </div>
+                <span>Cards</span>
+            </button>
+            <button class="nav-item active">
+                <div class="nav-icon">
+                    <img src="static/assets/home-page/sword.png" alt="battle">
+                </div>
+                <span>Battle</span>
+            </button>
+            <button class="nav-item">
+                <div class="nav-icon">
+                    <img src="https://raw.githubusercontent.com/smlbiobot/cr/master/ui/leagues/league-champion-grand.png" alt="social">
+                </div>
+                <span>Social</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ROOM MODAL (paste before </body>) -->
+<div id="roomModal" style="display:none; position:fixed; inset:0; z-index:99999; 
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items:center; justify-content:center;">
+  <div role="dialog" aria-modal="true" aria-labelledby="roomTitle"
+       style="width:92%; max-width:420px; border-radius:14px; padding:18px; 
+              background: linear-gradient(180deg, rgba(10,10,10,0.98), rgba(20,20,20,0.98)); 
+              box-shadow: 0 12px 40px rgba(0,0,0,0.7); position:relative; margin:auto;">
+    
+    <!-- Close btn -->
+    <button id="closeRoomModal" aria-label="Close" type="button"
+            style="position:absolute; right:12px; top:12px; background:transparent; border:none; color:#fff; 
+                   font-size:20px; cursor:pointer;">✕</button>
+
+    <!-- Title -->
+    <h3 id="roomTitle" style="color:#ffd700; margin:0 0 8px 0; font-size:20px; text-align:center;">
+      Play Online — Room
+    </h3>
+
+    <p style="color:#ccc; font-size:13px; text-align:center; margin:0 0 12px 0;">
+      Join an existing room or create a new one. Enter your display name below.
+    </p>
+
+    <!-- Form (posts to / ) -->
+    <form id="roomForm" action="/" method="POST" style="display:flex; flex-direction:column; gap:10px;">
+      <!-- display name -->
+      <input name="name" id="roomName" type="text" placeholder="Your name" required
+             style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid rgba(255,215,0,0.12); 
+                    background:rgba(255,255,255,0.03); color:#fff; outline:none; font-weight:600;" />
+
+      <!-- room code (for join) -->
+      <input name="code" id="roomCode" type="text" placeholder="Room code (for join)" maxlength="8" 
+             style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid rgba(255,255,255,0.06);
+                    background:rgba(255,255,255,0.02); color:#fff; font-weight:600;" />
+
+      <!-- hidden inputs for server logic -->
+      <input type="hidden" name="join" id="roomJoin" value="">
+      <input type="hidden" name="create" id="roomCreate" value="">
+
+      <!-- inline error text -->
+      <div id="roomError" style="display:none; color:#ff8a8a; font-size:13px; text-align:center;"></div>
+
+      <!-- Buttons row -->
+      <div style="display:flex; gap:10px; margin-top:4px;">
+        <!-- Create (will request creation of new room) -->
+        <button id="createRoomBtn" type="button" 
+                style="flex:1; padding:10px 12px; border-radius:12px; border:2px solid #ff9800; 
+                       background:linear-gradient(135deg,#ffd700,#ffb300); color:#5a3a00; font-weight:700; cursor:pointer;">
+          Create Room
+        </button>
+
+        <!-- Join (will submit join) -->
+        <button id="joinRoomBtn" type="button" 
+                style="flex:1; padding:10px 12px; border-radius:12px; border:2px solid #0066cc; 
+                       background:linear-gradient(135deg,#00bfff,#0080ff); color:#fff; font-weight:700; cursor:pointer;">
+          Join Room
+        </button>
+      </div>
+
+      <!-- small helper text -->
+      <p style="color:#999; font-size:12px; margin:8px 0 0 0; text-align:center;">
+        Creating a room generates a 4-letter code for others to join.
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+  // modal open/close
+  const openBtn = document.getElementById('openRoomModal');
+  const modal = document.getElementById('roomModal');
+  const closeBtn = document.getElementById('closeRoomModal');
+  const roomForm = document.getElementById('roomForm');
+  const createBtn = document.getElementById('createRoomBtn');
+  const joinBtn = document.getElementById('joinRoomBtn');
+  const roomJoin = document.getElementById('roomJoin');
+  const roomCreate = document.getElementById('roomCreate');
+  const roomCode = document.getElementById('roomCode');
+  const roomName = document.getElementById('roomName');
+  const roomError = document.getElementById('roomError');
+
+  openBtn.addEventListener('click', () => {
+    // reset fields
+    roomError.style.display = 'none';
+    roomError.textContent = '';
+    roomCode.value = '';
+    roomCreate.value = '';
+    roomJoin.value = '';
+    roomName.value = '';
+    modal.style.display = 'flex';
+    // focus name
+    setTimeout(() => roomName.focus(), 120);
+  });
+
+  closeBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  // close when clicking outside dialog
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
+  // Create room: set create flag and submit
+  createBtn.addEventListener('click', () => {
+    const nameVal = roomName.value.trim();
+    if (!nameVal) {
+      roomError.style.display = 'block';
+      roomError.textContent = 'Please enter your name to create a room.';
+      return;
+    }
+    roomCreate.value = 'true';
+    roomJoin.value = '';
+    roomError.style.display = 'none';
+    roomForm.submit();
+  });
+
+  // Join room: validate code & submit with join flag
+  joinBtn.addEventListener('click', () => {
+    const nameVal = roomName.value.trim();
+    const codeVal = roomCode.value.trim().toUpperCase();
+    if (!nameVal) {
+      roomError.style.display = 'block';
+      roomError.textContent = 'Please enter your name to join a room.';
+      return;
+    }
+    if (!codeVal) {
+      roomError.style.display = 'block';
+      roomError.textContent = 'Please enter the room code.';
+      return;
+    }
+    // simple client-side validation for code format (A-Z, 2-8 chars)
+    if (!/^[A-Z0-9]{2,8}$/.test(codeVal)) {
+      roomError.style.display = 'block';
+      roomError.textContent = 'Room code should be 2–8 letters/numbers.';
+      return;
+    }
+    roomJoin.value = 'true';
+    roomCreate.value = '';
+    roomCode.value = codeVal; // normalized uppercase
+    roomError.style.display = 'none';
+    roomForm.submit();
+  });
+
+  // allow pressing Enter in inputs to trigger Join by default if code exists
+  roomForm.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // if roomCode has value -> join, else create
+      if (roomCode.value.trim()) joinBtn.click();
+      else createBtn.click();
+    }
+  });
+</script>
+    <script>
+        // Create twinkling stars
+        
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animation = `twinkle ${2 + Math.random() * 3}s infinite ${Math.random() * 2}s`;
+            starsContainer.appendChild(star);
+        }
+
+        // Toggle between arena and deck cards
+        const navItems = document.querySelectorAll('.nav-item');
+        const arenaContainer = document.getElementById('arenaContainer');
+        const deckContainer = document.getElementById('deckContainer');
+        const actionbutton = document.getElementById('actionbutton');
+        
+        navItems.forEach((item, index) => {
+            item.addEventListener('click', function() {
+                // Remove active class from all nav items
+                navItems.forEach(nav => nav.classList.remove('active'));
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // Toggle display based on which nav item is clicked
+                if (index === 0) { // Cards button
+                    arenaContainer.style.display = 'none';
+                    deckContainer.style.display = 'block';
+                    actionbutton.style.display = 'none';
+
+                } else if (index === 1) { // Battle button
+                    arenaContainer.style.display = 'flex';
+                    deckContainer.style.display = 'none';
+                    actionbutton.style.display = '';
+                   
+                } else { // Social button
+                    arenaContainer.style.display = 'none';
+                    deckContainer.style.display = 'block';
+                    actionbutton.style.display = 'none';
+
+                }
+            });
+        });
+    </script>
+</body>
+</html>

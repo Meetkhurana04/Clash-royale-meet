@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Meet</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        /* Mobile-specific styles for game page */
+        @media (max-width: 768px) {
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                height: 100vh;
+                height: 100dvh; /* Dynamic viewport height for mobile */
+            }
+            
+            #game-wrapper {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 100vw;
+                max-width: 480px;
+                height: auto;
+                aspect-ratio: 480 / 720;
+                margin: 0;
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            /* Scale game wrapper to fit screen */
+            @media (max-height: 800px) {
+                #game-wrapper {
+                    height: 100vh;
+                    height: 100dvh;
+                    width: auto;
+                }
+            }
+        }
+        
+        /* Prevent text selection and touch callouts on mobile */
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="gradient-bg"></div>
+        <div class="stars" id="stars"></div>
+ 
+  <img src="static/assets/bg-img.jpeg" id= "bg-img">
+  <!-- towers -->
+  <img src="static/assets/opp-archer.png" id="opp-archer">
+  <img src="static/assets/opp-king.png" id="opp-king">
+  <img src="static/assets/our-archer.png" id="our-archer">
+  <img src="static/assets/our-king.png" id="our-king">
+
+  <!-- <img src="assets/elixir-bar.png" id = 'opp-bar'> -->
+<div id="game-wrapper" style="position:relative; width:480px; height:720px;">
+  <!-- Canvas -->
+  <canvas id="canvas" width="480" height="720"></canvas>
+
+  <!-- Background/towers (hidden, used for ctx.drawImage) -->
+  <img src="static/assets/bg-img.jpeg" id="bg-img" style="display:none;">
+  <img src="static/assets/bg-img2.jpg" id="bg-img2" style="display:none;">
+
+  <img src="static/assets/opp-archer.png" id="opp-archer0" style="display:none;">
+  <img src="static/assets/opp-archer.png" id="opp-archer1" style="display:none;">
+
+  <img src="static/assets/opp-king.png" id="opp-king" style="display:none;">
+  <img src="static/assets/our-archer.png" id="our-archer0" style="display:none;">
+  <img src="static/assets/our-archer.png" id="our-archer1" style="display:none;">
+
+  <img src="static/assets/our-king.png" id="our-king" style="display:none;">
+
+  <!-- Our deck -->
+  <img src="static/assets/knight-p.png" id="our-knight" draggable="true"
+       ondragstart="onDragStart(event, 'knight','our')">
+  <img src="static/assets/valk-p.png" id="our-valk" draggable="true"
+       ondragstart="onDragStart(event, 'valkyrie','our')">
+  <img src="static/assets/pekka-p.png" id="our-pekka" draggable="true"
+       ondragstart="onDragStart(event, 'pekka','our')">
+  <img src="static/assets/giant-p.png" id="our-royal_giant" draggable="true"
+       ondragstart="onDragStart(event, 'royal_giant','our')">
+
+  <!-- Our bar -->
+  <img src="static/assets/elixir-bar.png" id="our-bar">
+
+  <!-- Opp deck -->
+  <img src="static/assets/knight-p.png" id="opp-knight" draggable="true"
+       ondragstart="onDragStart(event, 'knight','opp')">
+  <img src="static/assets/valk-p.png" id="opp-valk" draggable="true"
+       ondragstart="onDragStart(event, 'valkyrie','opp')">
+  <img src="static/assets/pekka-p.png" id="opp-pekka" draggable="true"
+       ondragstart="onDragStart(event, 'pekka','opp')">
+  <img src="static/assets/giant-p.png" id="opp-royal_giant" draggable="true"
+       ondragstart="onDragStart(event, 'royal_giant','opp')">
+
+  <!-- Opp bar -->
+  <img src="static/assets/elixir-bar.png" id="opp-bar">
+
+  <!-- crown -->
+  <img src="static/assets/crown-blue.png" id="crownblue" style="display:none;">
+  <img src="static/assets/crown-red.png" id="crownred" style="display:none;">
+
+  <!-- crown cusshion -->
+  <img src="static/assets/red-cushion.png" id="cushionred" style="display:none;">
+  <img src="static/assets/blue-cushion.png" id="cushionblue" style="display:none;">
+
+</div>
+   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    // Initialize game mode variables from Flask template
+    const ai_mode = {% if ai_mode %}true{% else %}false{% endif %};
+    const multi_mode = {% if multi %}true{% else %}false{% endif %};
+    const room_code = {% if room %}"{{ room }}"{% else %}null{% endif %};
+    const player_name = {% if name %}"{{ name }}"{% else %}"You"{% endif %};
+
+    // Socket.IO + multiplayer
+    let socket = null;
+    let myPosition = null; // 'player1' or 'player2'
+    // global names used by game-logic.js
+    let ourPlayerName = typeof player_name !== 'undefined' ? player_name : 'You';
+    let oppPlayerName = 'Opponent'; // will be overwritten by server-sent name
+
+    if (multi_mode && room_code) {
+        socket = io();
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            // send the real player name stored in Flask session/template
+            socket.emit('join_room', {
+                room: room_code,
+                name: player_name
+            });
+        });
+
+        // Personalized join ack from server
+        socket.on('room_joined', (data) => {
+            console.log('room_joined:', data);
+            myPosition = data.position;
+            // Server gives 'you' and 'opponent' fields
+            if (data.you) ourPlayerName = data.you;
+            if (data.opponent) oppPlayerName = data.opponent;
+            // In case opponent is not present yet, keep placeholder or show "Waiting..."
+            if (!data.opponent) oppPlayerName = 'Waiting...';
+
+            // If you want to use the members list to update UI:
+            // updateLobbyUI(data.members);
+
+            // Example: notify game-logic that names are ready (if required)
+            // startOrUpdateGameNames(ourPlayerName, oppPlayerName);
+        });
+
+        socket.on('room_update', (data) => {
+            console.log('room_update:', data);
+            // Optionally update names from members list
+            const me = data.members.find(m => m.position === myPosition);
+            const other = data.members.find(m => m.position !== myPosition);
+            if (me) ourPlayerName = me.name;
+            if (other) oppPlayerName = other.name;
+        });
+
+        socket.on('game_start', (data) => {
+            console.log('Game starting:', data);
+            // server may include both players' names in data.players
+            if (Array.isArray(data.players) && data.players.length === 2) {
+                // assign by position to be safe
+                // If you want, ensure ordering is [player1, player2] by checking room_members order server-side
+                // Here we prefer existing ourPlayerName and oppPlayerName which should already be correct
+            }
+        });
+
+        socket.on('room_error', (data) => {
+            console.error('Room error:', data.error);
+            alert('Room error: ' + data.error);
+        });
+    }
+</script>
+
+<script src="/static/game-logic.js"></script>
+
+        
+
+</body>
+</html>
+
