@@ -1,5 +1,6 @@
 Flask>=2.0
-flask-socketio>=6.0
-python-socketio>=5.0
-
-eventlet>=0.33.0          # or gevent; eventlet simple for dev
+Flask-SocketIO==5.3.6
+eventlet
+python-engineio==4.3.4
+python-socketio==5.7.2
+gunicorn
