@@ -3,13 +3,18 @@ from flask_socketio import SocketIO, join_room as fs_join_room, leave_room as fs
 import random
 from string import ascii_uppercase
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text as sa_text
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+import time
+import sys
+import platform
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['APP_START_TIME'] = time.time()
 
 db = SQLAlchemy(app)
 socketio = SocketIO(app, manage_session=False)
@@ -741,6 +746,86 @@ def api_room_join():
     session["name"] = name
     return jsonify({"ok": True, "redirect": url_for("room_page")})
 
+
+
+# ---------------------------
+# Health check endpoint
+# ---------------------------
+@app.route("/health")
+def health():
+    started = app.config.get('APP_START_TIME')
+    uptime_seconds = (time.time() - started) if started else None
+
+    # Package versions (best-effort)
+    versions = {}
+    try:
+        import flask as _flask
+        versions['flask'] = getattr(_flask, '__version__', 'unknown')
+    except Exception:
+        versions['flask'] = 'unavailable'
+    try:
+        import flask_socketio as _fsio
+        versions['flask_socketio'] = getattr(_fsio, '__version__', 'unknown')
+    except Exception:
+        versions['flask_socketio'] = 'unavailable'
+    try:
+        import socketio as _socketio
+        versions['python_socketio'] = getattr(_socketio, '__version__', 'unknown')
+    except Exception:
+        versions['python_socketio'] = 'unavailable'
+    try:
+        import engineio as _engineio
+        versions['python_engineio'] = getattr(_engineio, '__version__', 'unknown')
+    except Exception:
+        versions['python_engineio'] = 'unavailable'
+    try:
+        import sqlalchemy as _sa
+        versions['sqlalchemy'] = getattr(_sa, '__version__', 'unknown')
+    except Exception:
+        versions['sqlalchemy'] = 'unavailable'
+
+    # Database check
+    db_ok = True
+    db_error = None
+    try:
+        db.session.execute(sa_text("SELECT 1"))
+    except Exception as e:
+        db_ok = False
+        db_error = str(e)
+
+    # In-memory/live stats
+    try:
+        total_db_users = User.query.count()
+    except Exception:
+        total_db_users = None
+    try:
+        total_db_rooms = Room.query.count()
+    except Exception:
+        total_db_rooms = None
+
+    live_rooms = len(room_members)
+    live_room_members = {code: len(members) for code, members in room_members.items()}
+    live_active_games = len(active_games)
+
+    return jsonify({
+        "ok": db_ok,
+        "status": "ok" if db_ok else "degraded",
+        "python": sys.version.split(" ")[0],
+        "platform": platform.platform(),
+        "versions": versions,
+        "db": {
+            "ok": db_ok,
+            "error": db_error,
+            "users": total_db_users,
+            "rooms": total_db_rooms
+        },
+        "live": {
+            "live_rooms": live_rooms,
+            "live_room_members": live_room_members,
+            "active_games": live_active_games
+        },
+        "uptime_seconds": uptime_seconds
+    })
 
 
 if __name__ == "__main__":
