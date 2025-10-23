@@ -29,6 +29,19 @@
     .small { font-size:13px; color:#bbb; margin-top:8px; text-align:center; }
     .toggle { display:flex; gap:8px; align-items:center; }
     .toggle input { transform:scale(1.2); }
+    .info-box {
+    max-width: 680px;
+    margin: -50px 12px 5px 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #aaa;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+    font-style: normal;
+  }
   </style>
 </head>
 <body>
@@ -59,8 +72,18 @@
       <div id="membersList" class="members"></div>
     </div>
 
-    <div id="statusMsg" class="small"></div>
-  </div>
+     <div id="statusMsg" class="small"></div>
+</div>
+
+<!-- 🌌 Info line — subtle philosophical note -->
+<div class="info-box">
+  <Span style="font-size:24px;">⚠️</Span> <br>
+   In this world, even perfect strategy can fail.
+You summon, you fight, you plan - but destiny interferes.
+Both players may win, or both may fall.
+The universe decides the ending, not you.
+Every battle here is a lesson in chaos and karma.
+</div>
 
   <script>
     const roomCode = "{{ room }}";
