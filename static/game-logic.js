@@ -370,6 +370,8 @@ move();
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+// Improve mobile interactions
+canvas.style.touchAction = 'none';
 
 // Canvas responsive sizing
 function resizeCanvas() {
@@ -404,6 +406,7 @@ function resizeCanvas() {
 // Call on load and resize
 window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', resizeCanvas);
+window.addEventListener('load', initTouchDrag);
 
 
 const oppspawn = {
@@ -1489,6 +1492,142 @@ canvas.addEventListener("drop", (event) => {
 
   makeActive(type, x, y, opp_or_not);
 });
+
+// ==============================
+// Touch support for mobile
+// Mirrors desktop drag/drop logic
+// ==============================
+let touchDrag = null; // { type, side }
+
+function isTouchDevice() {
+  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+}
+
+function preventContextMenus() {
+  // Prevent long-press save image menu on mobile for images and canvas
+  document.addEventListener('contextmenu', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'IMG' || t.id === 'canvas')) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+}
+
+function onTouchStartCard(e, type, side) {
+  if (!isTouchDevice()) return;
+  // Prevent scroll/zoom and native image actions
+  e.preventDefault();
+  touchDrag = { type, side };
+  currentDragSide = side;
+  if (side === 'our') {
+    isDraggingOur = true;
+    isDraggingOpp = false;
+  } else if (side === 'opp') {
+    isDraggingOpp = true;
+    isDraggingOur = false;
+  }
+}
+
+function onTouchMove(e) {
+  if (!touchDrag) return;
+  // Avoid page scroll while dragging
+  e.preventDefault();
+}
+
+function onTouchEnd(e) {
+  if (!touchDrag) return;
+  e.preventDefault();
+
+  const touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+  if (!touch) {
+    // reset states
+    isDraggingOur = false;
+    isDraggingOpp = false;
+    currentDragSide = null;
+    touchDrag = null;
+    return;
+  }
+
+  const { type, side } = touchDrag;
+
+  // Elixir check first
+  const needed = attackpower[type.toLowerCase()].elixir_needed;
+  const current = (side === 'our') ? current_elixirour : current_elixiropp;
+  if (current < needed) {
+    // Not enough elixir; just reset
+    isDraggingOur = false;
+    isDraggingOpp = false;
+    currentDragSide = null;
+    touchDrag = null;
+    return;
+  }
+
+  // Map touch to canvas coordinates
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const xCss = touch.clientX - rect.left;
+  const yCss = touch.clientY - rect.top;
+  let x = xCss * scaleX;
+  let y = yCss * scaleY;
+  // center the sprite on the pointer
+  x = Math.round(x - playersize / 2);
+  y = Math.round(y - playersize / 2);
+  // clamp inside canvas
+  x = Math.max(0, Math.min(canvas.width - playersize, x));
+  y = Math.max(0, Math.min(canvas.height - playersize, y));
+
+  // Side restrictions (same as desktop drop)
+  const centerY = y + Math.floor(playersize / 2);
+  if (side === 'our' && centerY < canvas.height / 2) {
+    // invalid drop zone for our side
+  } else if (side === 'opp' && centerY > canvas.height / 2) {
+    // invalid drop zone for opp side
+  } else {
+    makeActive(type, x, y, side);
+  }
+
+  // reset states
+  isDraggingOur = false;
+  isDraggingOpp = false;
+  currentDragSide = null;
+  touchDrag = null;
+}
+
+function initTouchDrag() {
+  if (!isTouchDevice()) return;
+
+  // map element id -> { type, side }
+  const mapping = {
+    'our-knight': { type: 'knight', side: 'our' },
+    'our-valk': { type: 'valkyrie', side: 'our' },
+    'our-pekka': { type: 'pekka', side: 'our' },
+    'our-royal_giant': { type: 'royal_giant', side: 'our' },
+    'opp-knight': { type: 'knight', side: 'opp' },
+    'opp-valk': { type: 'valkyrie', side: 'opp' },
+    'opp-pekka': { type: 'pekka', side: 'opp' },
+    'opp-royal_giant': { type: 'royal_giant', side: 'opp' }
+  };
+
+  Object.keys(mapping).forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // reduce native gestures on images
+    el.style.touchAction = 'none';
+    // Prevent callout if CSS misses
+    el.setAttribute('draggable', el.getAttribute('draggable') || 'true');
+    el.addEventListener('touchstart', (e) => onTouchStartCard(e, mapping[id].type, mapping[id].side), { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: false });
+  });
+
+  // also prevent default gestures on canvas while interacting
+  canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+  canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+  canvas.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+
+  preventContextMenus();
+}
 
 //oppp //our
 // our me kya h saare humare playera dn uske x y ki information
