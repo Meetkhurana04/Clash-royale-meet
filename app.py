@@ -9,11 +9,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import time
 import sys
 import platform
+import os
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key_here"
+app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_here')
 # Update with your Supabase PostgreSQL connection string
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:iluvmyfamily!23@db.xsmrqbtwdmiorlymejdl.supabase.co:5432/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
 # Recommended production settings for PostgreSQL
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
