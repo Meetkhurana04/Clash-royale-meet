@@ -543,10 +543,10 @@ body {
         touch-action: manipulation;
     }
     #logo{
-        margin-top: -50px;
-        margin-bottom: 80px;
-        margin-left: 40px;
-        min-width: 330px;
+        margin-top: -200px;
+        margin-bottom: -80px;
+        margin-left: 28px;
+        width: 330px;
     }
 
     body {
@@ -581,11 +581,12 @@ body {
     }
 
     .arena-image {
-        margin-top: -160px ;
-        width: 90%;
+        margin-top: 10px;
+        width: 80%;
         height: auto;
+        margin: 0 auto;
         display: block;
-        margin-bottom: -10px;
+        margin-bottom: -60px;
     }
 
     /* Buttons */
@@ -594,8 +595,6 @@ body {
         gap: 10px;
         margin-top: -50px !important;
         justify-content: center;
-        margin-right: 14px;
-        margin-left: 14px;
     }
 
     .battle-btn, .party-btn {
@@ -608,9 +607,7 @@ body {
     .deck-cards-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
-        margin-top: -40px;
-        margin-left: 25px;
-        margin-right: 25px;
+        margin-top: 150px;
     }
 
     .deck-card {
