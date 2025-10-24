@@ -26,7 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['APP_START_TIME'] = time.time()
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, manage_session=False, async_mode='eventlet')
+socketio = SocketIO(app, manage_session=False, async_mode='threading')
 
 # in-memory mapping: room_code -> { sid: username }
 room_members = {}
