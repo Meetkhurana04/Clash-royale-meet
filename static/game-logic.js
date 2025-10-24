@@ -769,7 +769,7 @@ drawtowers(activeplayers);
 
 
 
-drawElixirBar(ctx, 230, 0, 230, 28, (current_elixiropp/max_elixir));
+drawElixirBar(ctx, 230, 0, 230, 20, (current_elixiropp/max_elixir));
 
 drawElixirBar(ctx, 230, 653, 230, 28, (current_elixirour/max_elixir));
 
@@ -1497,7 +1497,8 @@ canvas.addEventListener("drop", (event) => {
 // Touch support for mobile
 // Mirrors desktop drag/drop logic
 // ==============================
-let touchDrag = null; // { type, side }
+let touchDrag = null; // { type, side, src, w, h }
+let dragGhostEl = null; // floating image following finger
 
 function isTouchDevice() {
   return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
@@ -1517,7 +1518,11 @@ function onTouchStartCard(e, type, side) {
   if (!isTouchDevice()) return;
   // Prevent scroll/zoom and native image actions
   e.preventDefault();
-  touchDrag = { type, side };
+  const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+  const src = e.currentTarget && e.currentTarget.src ? e.currentTarget.src : null;
+  const w = e.currentTarget ? e.currentTarget.clientWidth : 48;
+  const h = e.currentTarget ? e.currentTarget.clientHeight : 48;
+  touchDrag = { type, side, src, w, h };
   currentDragSide = side;
   if (side === 'our') {
     isDraggingOur = true;
@@ -1526,12 +1531,20 @@ function onTouchStartCard(e, type, side) {
     isDraggingOpp = true;
     isDraggingOur = false;
   }
+
+  if (src && touch) {
+    createDragGhost(src, touch.clientX, touch.clientY, w, h);
+  }
 }
 
 function onTouchMove(e) {
   if (!touchDrag) return;
   // Avoid page scroll while dragging
   e.preventDefault();
+  const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+  if (touch && dragGhostEl) {
+    moveDragGhost(touch.clientX, touch.clientY);
+  }
 }
 
 function onTouchEnd(e) {
@@ -1545,6 +1558,7 @@ function onTouchEnd(e) {
     isDraggingOpp = false;
     currentDragSide = null;
     touchDrag = null;
+    removeDragGhost();
     return;
   }
 
@@ -1592,6 +1606,7 @@ function onTouchEnd(e) {
   isDraggingOpp = false;
   currentDragSide = null;
   touchDrag = null;
+  removeDragGhost();
 }
 
 function initTouchDrag() {
@@ -1627,6 +1642,37 @@ function initTouchDrag() {
   canvas.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
 
   preventContextMenus();
+}
+
+// ------- Ghost preview helpers -------
+function createDragGhost(src, x, y, w, h) {
+  removeDragGhost();
+  const img = document.createElement('img');
+  img.src = src;
+  img.style.position = 'fixed';
+  img.style.left = x + 'px';
+  img.style.top = y + 'px';
+  img.style.width = w + 'px';
+  img.style.height = h + 'px';
+  img.style.pointerEvents = 'none';
+  img.style.opacity = '0.85';
+  img.style.transform = 'translate(-50%, -50%)';
+  img.style.zIndex = '99999';
+  dragGhostEl = img;
+  document.body.appendChild(img);
+}
+
+function moveDragGhost(x, y) {
+  if (!dragGhostEl) return;
+  dragGhostEl.style.left = x + 'px';
+  dragGhostEl.style.top = y + 'px';
+}
+
+function removeDragGhost() {
+  if (dragGhostEl && dragGhostEl.parentNode) {
+    dragGhostEl.parentNode.removeChild(dragGhostEl);
+  }
+  dragGhostEl = null;
 }
 
 //oppp //our
@@ -1759,12 +1805,12 @@ function spawnTower(type, x, y, w, h, opp_or_not) {
   }
   else if (type === "ourarcher0") {imageRef = ourarcher0;
   xx=75;
-  yy=540;
+  yy=500;//540
   size=80;
   }
   else if (type === "ourarcher1") {imageRef = ourarcher1;
   xx=345;
-  yy=540;
+  yy=500;//540
   size=80;
   }
   else if (type === "oppking") {imageRef = oppking;
@@ -1774,7 +1820,7 @@ function spawnTower(type, x, y, w, h, opp_or_not) {
   }
   else if (type === "ourking") {imageRef = ourking;
   xx=210;
-  yy=560;
+  yy=520;//560
   size=80;
   }
 // ctx.fillRect(75, 100, 80, 80);
@@ -1858,9 +1904,9 @@ window.onload = () => {
     
 
     // Opp towers
-    spawnTower("ourarcher0", 55, 480,120,140 ,"our");//75
-    spawnTower("ourarcher1", 310, 480,120,140, "our");//310
-    spawnTower("ourking", 150,490, 180,180, "our");//150
+    spawnTower("ourarcher0", 55, 500,120,140 ,"our");//75
+    spawnTower("ourarcher1", 310, 500,120,140, "our");//310
+    spawnTower("ourking", 150,510, 180,180, "our");//150
   } else {
     console.log('Game state restored from previous session');
   }
