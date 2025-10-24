@@ -12,7 +12,15 @@ import platform
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+# Update with your Supabase PostgreSQL connection string
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:iluvmyfamily!23@db.xsmrqbtwdmiorlymejdl.supabase.co:5432/postgres'
+# Recommended production settings for PostgreSQL
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_size': 5,
+    'max_overflow': 10
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['APP_START_TIME'] = time.time()
 
