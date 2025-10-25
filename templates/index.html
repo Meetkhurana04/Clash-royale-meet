@@ -488,7 +488,7 @@
     <form id="roomForm" action="/" method="POST" style="display:flex; gap:12px; flex-direction:column;">
       <input name="name" id="roomName" type="text" placeholder="Your name" required
              style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid rgba(255,215,0,0.12); 
-                    background:rgba(255,255,255,0.03); color:#fff; outline:none; font-weight:600; display:none;" />
+                    background:rgba(255,255,255,0.03); color:#fff; outline:none; font-weight:600; display:block;" />
 
       <!-- Room code field: hidden on Create, visible for Join -->
       <input name="code" id="roomCode" type="text" placeholder="Room code (for join)" maxlength="8" 
@@ -532,7 +532,7 @@
     <!-- Scrollable public rooms list -->
     <div style="max-height:260px; overflow:auto; padding-right:6px;" id="roomListContainer" aria-live="polite">
       <div id="roomList" style="display:flex; flex-direction:column; gap:10px; padding:4px 0;">
-        <div id="roomsLoading" style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div>
+        <!-- <div id="roomsLoading" style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div> -->
         <!-- populated dynamically -->
         <div style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div>
       </div>
@@ -544,68 +544,6 @@
 
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  const createBtn = document.getElementById("createRoomBtn");
-  const joinBtn = document.getElementById("joinRoomBtn");
-  const roomCodeWrapper = document.getElementById("roomCodeWrapper");
-  const publicList = document.getElementById("publicRoomsList");
-  const logo = document.getElementById("logo");
-
-  // --- Toggle join mode ---
-  joinBtn.addEventListener("click", () => {
-    const name = document.getElementById("playerName").value.trim();
-    const code = document.getElementById("roomCode").value.trim().toUpperCase();
-    if (!code) {
-      roomCodeWrapper.style.display = "block";
-      roomCodeWrapper.querySelector("input").focus();
-      return;
-    }
-    window.location.href = `/?join=1&name=${encodeURIComponent(name)}&code=${code}`;
-  });
-
-  createBtn.addEventListener("click", () => {
-    const name = document.getElementById("playerName").value.trim();
-    if (!name) return alert("Please enter your name");
-    window.location.href = `/?create=1&name=${encodeURIComponent(name)}`;
-  });
-
-  // --- Load Public Rooms ---
-  async function loadPublicRooms() {
-    try {
-      const res = await fetch("/api/rooms/public");
-      const data = await res.json();
-      if (!data.ok || data.rooms.length === 0) {
-        publicList.innerHTML = `<p class="text-center text-muted small mb-0">No public rooms available</p>`;
-        return;
-      }
-
-      publicList.innerHTML = "";
-      data.rooms.forEach(room => {
-        const el = document.createElement("div");
-        el.className = "d-flex justify-content-between align-items-center bg-dark rounded-3 p-2 mb-2 room-item";
-        el.style.cursor = "pointer";
-        el.innerHTML = `
-          <div>
-            <strong>${room.code}</strong>
-            <span class="text-muted small"> (${room.members}/2 players)</span>
-          </div>
-          <span class="badge bg-success">${room.is_private ? "Private" : "Public"}</span>
-        `;
-        el.addEventListener("click", () => {
-          document.getElementById("roomCode").value = room.code;
-          roomCodeWrapper.style.display = "block";
-          roomCodeWrapper.scrollIntoView({ behavior: "smooth" });
-        });
-        publicList.appendChild(el);
-      });
-    } catch (err) {
-      publicList.innerHTML = `<p class="text-danger text-center small">Failed to load rooms</p>`;
-    }
-  }
-
-  loadPublicRooms();
-});
-
 
 /* ---------- Unified client script for index.html ---------- */
 
