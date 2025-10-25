@@ -9,12 +9,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import time
 import sys
 import platform
-import os
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_here')
-# Update with your Supabase PostgreSQL connection string
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
+app.secret_key = "your_secret_key_here"
+import os
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+
 # Recommended production settings for PostgreSQL
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
@@ -26,7 +27,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['APP_START_TIME'] = time.time()
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, manage_session=False, async_mode='threading')
+socketio = SocketIO(app, manage_session=False)
 
 # in-memory mapping: room_code -> { sid: username }
 room_members = {}
