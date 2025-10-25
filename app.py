@@ -4,7 +4,7 @@ import random
 from string import ascii_uppercase
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text as sa_text
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import time
 import sys
@@ -125,7 +125,7 @@ def home():
     room_code = code
     if create:
         room_code = roomcode(4)
-        new_room = Room(code=room_code, owner_id=user.id, members=0, is_private=(is_private_flag == "1"))
+        new_room = Room(code=room_code, owner_id=user.id, members=1, is_private=(is_private_flag == "1"))  # Set members=1 for owner
         # upar waali line new row bnayegi humare room wale table me 
         db.session.add(new_room) # yeh chij btayega ki m ready hu add krdna yeh temporary memory store horhi hoti h 
         db.session.commit() # yeh chij h ki jo jo chij session me aayi h use commit krdo
@@ -688,26 +688,22 @@ def api_rooms_list():
     rooms = Room.query.filter_by(is_private=False).order_by(Room.created_at.desc()).all()
     out = []
 
+    now = datetime.utcnow()
     for r in rooms:
         # live member count from in-memory room_members (primary source)
         live_count = len(room_members.get(r.code, {}))
 
-        # Prune logic: only if empty AND older than 5 minutes
-        if live_count < 1:
+        # Prune ONLY if empty in BOTH live & DB AND >15 minutes old (protects new owner-created rooms)
+        if live_count < 1 and r.members < 1 and (now - r.created_at) > timedelta(minutes=15):
             try:
-                # Double-check and remove persistent entry
                 db_room = Room.query.filter_by(code=r.code).first()
                 if db_room:
-                    age_seconds = (datetime.utcnow() - db_room.created_at).total_seconds()
-                    if age_seconds > 300:  # 5 minutes
-                        db.session.delete(db_room)
-                        db.session.commit()
-                        # also remove any leftover in-memory mapping (just in case)
-                        room_members.pop(r.code, None)
-                        continue  # skip adding to output (pruned)
-                    # else: fall through to add (show as 0/2 for new rooms)
+                    db.session.delete(db_room)
+                    db.session.commit()
+                    room_members.pop(r.code, None)
+                    continue  # skip adding to output (pruned)
             except Exception:
-                app.logger.exception("Failed pruning empty room: %s", r.code)
+                app.logger.exception("Failed pruning old empty room: %s", r.code)
                 db.session.rollback()
                 # if prune failed, still try to add to output
 
