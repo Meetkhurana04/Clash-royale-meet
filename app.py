@@ -14,7 +14,11 @@ app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
 import os
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///app.db"
+)
+
 
 # Recommended production settings for PostgreSQL
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {

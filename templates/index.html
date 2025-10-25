@@ -190,10 +190,7 @@
             <div class="arena-container" id="arenaContainer">
                 
                     <img src="/static/assets/home-page/arena-0.png" alt="arena" class="arena-image" id ="arenaimg">
-                    <div class="arena-label">
-                        <span>Trainer Camp</span>
-                    
-                </div>
+                   
             </div>
 
             <!-- Deck Cards Display (Hidden by default) -->
@@ -535,6 +532,7 @@
     <!-- Scrollable public rooms list -->
     <div style="max-height:260px; overflow:auto; padding-right:6px;" id="roomListContainer" aria-live="polite">
       <div id="roomList" style="display:flex; flex-direction:column; gap:10px; padding:4px 0;">
+        <div id="roomsLoading" style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div>
         <!-- populated dynamically -->
         <div style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div>
       </div>
@@ -1136,19 +1134,31 @@ if (joinRoomBtn) {
 /* Fetch public rooms list and render them */
 async function fetchAndRenderRooms() {
   const listEl = $id('roomList');
+  const loadingEl = $id('roomsLoading');
+
   if (!listEl) return;
-  listEl.innerHTML = '<div style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div>';
+
+  if (loadingEl) loadingEl.style.display = 'block';
+
   try {
     const res = await fetch('/api/rooms', { credentials: 'same-origin' });
     const data = await res.json();
+
     if (!data.ok) {
-      listEl.innerHTML = '<div style="color:#f88; padding:18px; text-align:center;">Failed to load rooms.</div>';
+      listEl.innerHTML =
+        '<div style="color:#f88; padding:18px; text-align:center;">Failed to load rooms.</div>';
       return;
     }
+
     renderRoomsList(data.rooms || []);
   } catch (err) {
-    listEl.innerHTML = '<div style="color:#f88; padding:18px; text-align:center;">Network error loading rooms.</div>';
+    listEl.innerHTML =
+      '<div style="color:#f88; padding:18px; text-align:center;">Network error loading rooms.</div>';
+  } finally {
+    if (loadingEl) loadingEl.style.display = 'none';
   }
+}
+
 }
 
 function renderRoomsList(rooms) {
