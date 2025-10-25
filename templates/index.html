@@ -532,7 +532,7 @@
     <!-- Scrollable public rooms list -->
     <div style="max-height:260px; overflow:auto; padding-right:6px;" id="roomListContainer" aria-live="polite">
       <div id="roomList" style="display:flex; flex-direction:column; gap:10px; padding:4px 0;">
-        <div id="roomsLoading" style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div>
+        <!-- <div id="roomsLoading" style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div> -->
         <!-- populated dynamically -->
         <div style="color:#aaa; padding:18px; text-align:center;">Loading public rooms...</div>
       </div>
@@ -544,68 +544,7 @@
 
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  const createBtn = document.getElementById("createRoomBtn");
-  const joinBtn = document.getElementById("joinRoomBtn");
-  const roomCodeWrapper = document.getElementById("roomCodeWrapper");
-  const publicList = document.getElementById("publicRoomsList");
-  const logo = document.getElementById("logo");
-
-  // --- Toggle join mode ---
-  joinBtn.addEventListener("click", () => {
-    const name = document.getElementById("playerName").value.trim();
-    const code = document.getElementById("roomCode").value.trim().toUpperCase();
-    if (!code) {
-      roomCodeWrapper.style.display = "block";
-      roomCodeWrapper.querySelector("input").focus();
-      return;
-    }
-    window.location.href = `/?join=1&name=${encodeURIComponent(name)}&code=${code}`;
-  });
-
-  createBtn.addEventListener("click", () => {
-    const name = document.getElementById("playerName").value.trim();
-    if (!name) return alert("Please enter your name");
-    window.location.href = `/?create=1&name=${encodeURIComponent(name)}`;
-  });
-
-  // --- Load Public Rooms ---
-  async function loadPublicRooms() {
-    try {
-      const res = await fetch("/api/rooms/public");
-      const data = await res.json();
-      if (!data.ok || data.rooms.length === 0) {
-        publicList.innerHTML = `<p class="text-center text-muted small mb-0">No public rooms available</p>`;
-        return;
-      }
-
-      publicList.innerHTML = "";
-      data.rooms.forEach(room => {
-        const el = document.createElement("div");
-        el.className = "d-flex justify-content-between align-items-center bg-dark rounded-3 p-2 mb-2 room-item";
-        el.style.cursor = "pointer";
-        el.innerHTML = `
-          <div>
-            <strong>${room.code}</strong>
-            <span class="text-muted small"> (${room.members}/2 players)</span>
-          </div>
-          <span class="badge bg-success">${room.is_private ? "Private" : "Public"}</span>
-        `;
-        el.addEventListener("click", () => {
-          document.getElementById("roomCode").value = room.code;
-          roomCodeWrapper.style.display = "block";
-          roomCodeWrapper.scrollIntoView({ behavior: "smooth" });
-        });
-        publicList.appendChild(el);
-      });
-    } catch (err) {
-      publicList.innerHTML = `<p class="text-danger text-center small">Failed to load rooms</p>`;
-    }
-  }
-
-  loadPublicRooms();
-});
-
+let currentAuth = null;  // Cache for username fallback
 
 /* ---------- Unified client script for index.html ---------- */
 
@@ -783,6 +722,7 @@ async function renderSocial() {
 
   try {
     const auth = await checkAuth();
+    currentAuth = auth;  // Cache it
 
     if (auth) {
       if (profileCard) profileCard.style.display = 'block';
@@ -1096,6 +1036,9 @@ if (joinRoomBtn) {
     if (!roomForm) return;
     const name = (roomNameInput && roomNameInput.value || '').trim();
     const code = (roomCodeInput && roomCodeInput.value || '').trim().toUpperCase();
+    if (!name && currentAuth) {
+      name = currentAuth.username || '';
+    }
 
     if (!name) {
       if (roomError) { roomError.style.display = 'block'; roomError.textContent = 'Enter your display name.'; }
@@ -1188,6 +1131,46 @@ function renderRoomsList(rooms) {
     listEl.appendChild(card);
   });
 
+  // Wire join buttons
+  Array.from(listEl.querySelectorAll('.room-join-btn')).forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      const code = btn.getAttribute('data-code');
+      let name = (roomNameInput && roomNameInput.value || '').trim();
+      
+      // Fallback to cached username if name empty
+      if (!name && currentAuth) {
+        name = currentAuth.username || '';
+      }
+      
+      if (!name) {
+        if (roomError) { 
+          roomError.style.display = 'block'; 
+          roomError.textContent = 'Enter your display name.'; 
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/room/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ code, name })
+        });
+        const json = await res.json();
+        if (!json.ok) {
+          roomError.style.display = 'block';
+          roomError.textContent = json.error || 'Failed to join room';
+          return;
+        }
+        window.location = json.redirect || '/room';
+      } catch (e) {
+        roomError.style.display = 'block';
+        roomError.textContent = 'Network error joining room.';
+      }
+    });
+  });
+}
   // wire join buttons
   Array.from(listEl.querySelectorAll('.room-join-btn')).forEach(btn => {
     btn.addEventListener('click', async (ev) => {
