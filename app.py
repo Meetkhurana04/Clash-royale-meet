@@ -692,21 +692,24 @@ def api_rooms_list():
         # live member count from in-memory room_members (primary source)
         live_count = len(room_members.get(r.code, {}))
 
-        # If we detect 0 live members, delete the DB record (prune) and continue
+        # Prune logic: only if empty AND older than 5 minutes
         if live_count < 1:
             try:
                 # Double-check and remove persistent entry
                 db_room = Room.query.filter_by(code=r.code).first()
                 if db_room:
-                    db.session.delete(db_room)
-                    db.session.commit()
-                    # also remove any leftover in-memory mapping (just in case)
-                    room_members.pop(r.code, None)
+                    age_seconds = (datetime.utcnow() - db_room.created_at).total_seconds()
+                    if age_seconds > 300:  # 5 minutes
+                        db.session.delete(db_room)
+                        db.session.commit()
+                        # also remove any leftover in-memory mapping (just in case)
+                        room_members.pop(r.code, None)
+                        continue  # skip adding to output (pruned)
+                    # else: fall through to add (show as 0/2 for new rooms)
             except Exception:
                 app.logger.exception("Failed pruning empty room: %s", r.code)
                 db.session.rollback()
-            # skip adding to output
-            continue
+                # if prune failed, still try to add to output
 
         # Owner lookup
         owner = User.query.get(r.owner_id) if r.owner_id else None
