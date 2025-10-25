@@ -140,7 +140,7 @@ body {
 .arena-image {
     margin-top: -100px;
     width: 80%;
-    margin-left: 55px;
+    margin-left: 0px;
     height: 70%;
     display: block;
 }
@@ -508,7 +508,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
-    width: 330px !important; /* Adjust size as needed */
+    width: 320px !important; /* Adjust size as needed */
     margin: 0 auto;
     display: block !important;
 }
@@ -559,7 +559,7 @@ body {
     }
     #logo{
         margin-left: 40px;
-        max-width: 290px;
+        max-width: 275px;
     }
 
     body {
@@ -598,11 +598,11 @@ body {
 
 
     .arena-image {
-        margin-top: -280px ;
+        margin-top: -285px ;
         width: 95%;
         height: auto;
         display: block;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
 
     }
     .profile-card{
@@ -629,7 +629,7 @@ body {
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
         /* margin-top: -40px; */
-        margin-top: 150px;
+        /* margin-top: 150px; */
         margin-left: 25px;
         margin-right: 25px;
     }
