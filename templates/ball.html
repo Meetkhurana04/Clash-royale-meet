@@ -113,12 +113,11 @@ for (let i = 0; i < 100; i++) {
     let oppPlayerName = 'Opponent'; // will be overwritten by server-sent name
 
     if (multi_mode && room_code) {
-        const socket = io({
-    transports: ['websocket'],
-    pingTimeout: 60000,
-    pingInterval: 25000
+            socket = io({
+    transports: ["websocket", "polling"]
 });
 
+ currentRoom = room_code;
         socket.on('connect', () => {
             console.log('Connected to server');
             // send the real player name stored in Flask session/template
@@ -132,6 +131,7 @@ for (let i = 0; i < 100; i++) {
         socket.on('room_joined', (data) => {
             console.log('room_joined:', data);
             myPosition = data.position;
+            playerPosition = data.position;
             // Server gives 'you' and 'opponent' fields
             if (data.you) ourPlayerName = data.you;
             if (data.opponent) oppPlayerName = data.opponent;
