@@ -91,7 +91,12 @@ Every battle here is a lesson in chaos and karma.
     const userName = "{{ name }}";
     const userId = {{ user_id if user_id else 'null' }};
     
-    const socket = io();
+    const socket = io({
+    transports: ['websocket'],
+    pingTimeout: 60000,
+    pingInterval: 25000
+});
+
     let joinAttempted = false; // NEW: Track join to retry
     let pollInterval; // NEW: For polling updates
     
