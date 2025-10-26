@@ -36,6 +36,9 @@ socketio = SocketIO(app, manage_session=False)
 # in-memory mapping: room_code -> { sid: username }
 room_members = {}
 
+# Track which rooms a user is in for O(1) access during disconnect
+user_rooms = {}  # sid -> set of room_codes
+
 # Track which rooms have active games (game started, not just waiting)
 active_games = set()  # stores room codes where game is active
 
@@ -396,6 +399,11 @@ def handle_join_room(data):
         player_position = "player1" if len(room_members[room]) == 0 else "player2"
         room_members[room][request.sid] = {"name": name, "position": player_position}
 
+        # Track user rooms for O(1) access during disconnect
+        if request.sid not in user_rooms:
+            user_rooms[request.sid] = set()
+        user_rooms[request.sid].add(room)
+
         # Persist live count to DB (best-effort)
         try:
             db_room = Room.query.filter_by(code=room).first()
@@ -410,7 +418,14 @@ def handle_join_room(data):
         member_list = [{"name": m["name"], "position": m["position"]}
                        for m in room_members[room].values()]
 
-        # Send personalized join info to each player
+        # Immediate broadcast to ALL (including new joiner) for reliability
+        emit("room_update", {
+            "room": room,
+            "members": member_list,
+            "playerCount": len(member_list)
+        }, room=room, include_self=True)
+
+        # Then send personalized join info to each player
         for sid, info in room_members[room].items():
             you_name = info["name"]
             opponent_name = None
@@ -441,73 +456,74 @@ def handle_join_room(data):
 
 @socketio.on("disconnect")
 def handle_disconnect():
-    # Remove player from all rooms
-    for room_code, members in list(room_members.items()):
-        if request.sid in members:
+    if request.sid not in user_rooms:
+        return  # No rooms to clean
+    
+    # Get all rooms this user was in (O(1) access)
+    rooms_to_clean = list(user_rooms[request.sid])
+    del user_rooms[request.sid]  # Clean up tracking
+    
+    for room_code in rooms_to_clean:
+        if room_code not in room_members or request.sid not in room_members[room_code]:
+            continue
+            
+        try:
+            members = room_members[room_code]
+            # Get disconnecting player info before removing
+            disconnecting_player = members[request.sid]
+            disconnecting_position = disconnecting_player.get("position")
+            
+            # Remove from in-memory tracking
+            del members[request.sid]
+            fs_leave_room(room_code)
+
+            # Handle active game resignation if needed
+            if len(members) == 1 and room_code in active_games:
+                remaining_sid = list(members.keys())[0]
+                remaining_player = members[remaining_sid]
+                
+                emit("player_resigned", {
+                    "room": room_code,
+                    "reason": "disconnect",
+                    "winner_position": remaining_player.get("position"),
+                    "loser_position": disconnecting_position
+                }, room=room_code)
+            
+            # Clean up active game tracking if needed
+            if len(members) < 2:
+                active_games.discard(room_code)
+            
+            # BATCHED DB UPDATE (one query/commit per room, not per player)
+            new_count = len(members)
             try:
-                # Get disconnecting player info before removing
-                disconnecting_player = members[request.sid]
-                disconnecting_position = disconnecting_player.get("position")
-                
-                # remove from in-memory
-                del members[request.sid]
-                fs_leave_room(room_code)
-
-                # If there's still 1 player left AND game was active, handle resignation logic
-                if len(members) == 1 and room_code in active_games:
-                    # Get remaining player (winner)
-                    remaining_sid = list(members.keys())[0]
-                    remaining_player = members[remaining_sid]
+                db_room = Room.query.filter_by(code=room_code).first()
+                if db_room:
+                    db_room.members = new_count
+                    if new_count <= 0:
+                        db.session.delete(db_room)
+                    db.session.commit()  # Single commit per room
                     
-                    # Try to get user IDs from session or database
-                    db_room = Room.query.filter_by(code=room_code).first()
-                    if db_room and db_room.owner_id:
-                        # Determine winner and loser user IDs
-                        # This is a best-effort approach; ideally track user_id per sid
-                        try:
-                            # Get both players' user objects (if logged in)
-                            # For now, we'll emit event to client to handle trophy update
-                            emit("player_resigned", {
-                                "room": room_code,
-                                "reason": "disconnect",
-                                "winner_position": remaining_player.get("position"),
-                                "loser_position": disconnecting_position
-                            }, room=room_code)
-                        except Exception:
-                            app.logger.exception("Failed to process resignation for room %s", room_code)
-                
-                # Clean up active game tracking if room is now empty or has <2 players
-                if len(members) < 2:
-                    active_games.discard(room_code)
-
-                # Persist updated member count to DB; if zero, delete the room row
-                try:
-                    db_room = Room.query.filter_by(code=room_code).first()
-                    if db_room:
-                        db_room.members = len(members)
-                        if db_room.members <= 0:
-                            db.session.delete(db_room)
-                            db.session.commit()
-                        else:
-                            db.session.commit()
-                except Exception:
-                    app.logger.exception("Failed to persist member count on disconnect for room %s", room_code)
-                    db.session.rollback()
-
-                # Notify remaining players or clean up in-memory map
-                if members:
-                    member_list = [{"name": m["name"], "position": m["position"]} for m in members.values()]
-                    emit("room_update", {
-                        "room": room_code,
-                        "members": member_list,
-                        "playerCount": len(members)
-                    }, room=room_code)
-                else:
-                    # no members left in-memory: remove key
-                    room_members.pop(room_code, None)
-
+                    # If room is now empty, clean up in-memory tracking
+                    if new_count == 0:
+                        room_members.pop(room_code, None)
             except Exception:
-                app.logger.exception("Error handling disconnect for room %s", room_code)
+                app.logger.exception("Failed to persist member count on disconnect for room %s", room_code)
+                db.session.rollback()
+                continue  # Continue with next room even if one fails
+            
+            # Notify remaining players if any
+            if new_count > 0:
+                member_list = [{"name": m["name"], "position": m["position"]} 
+                             for m in members.values()]
+                emit("room_update", {
+                    "room": room_code,
+                    "members": member_list,
+                    "playerCount": new_count
+                }, room=room_code)
+                
+        except Exception:
+            app.logger.exception("Error handling disconnect for room %s", room_code)
+            db.session.rollback()  # Ensure we don't leave transactions open
 
 @socketio.on("player_spawn")
 def handle_player_spawn(data):
@@ -560,7 +576,7 @@ def handle_game_start(data):
     if not room:
         emit("room_error", {"error": "Missing room"}, to=request.sid)
         return
-    # Validate room exists and has exactly 2 players ready
+    # Validate room exists and has exactly 2 players ready (in-memory check)
     members = room_members.get(room)
     if not members:
         emit("room_error", {"error": "Room not found"}, to=request.sid)
@@ -568,14 +584,30 @@ def handle_game_start(data):
     if len(members) < 2:
         emit("room_error", {"error": "Need 2 players to start"}, to=request.sid)
         return
-    # Optionally: enforce owner-only start by comparing current user to Room.owner_id
-    # Skipped for now due to lack of user<->sid mapping; client UI already hints owner-only.
+        
+    # Additional DB-level validation to handle race conditions
+    db_room = Room.query.filter_by(code=room).first()
+    if not db_room or db_room.members < 2:
+        emit("room_error", {"error": "Room not ready (syncing...)"}, to=request.sid)
+        return
 
     # Mark this room as having an active game
     active_games.add(room)
     
     # Broadcast start signal so clients can redirect to /multi
     emit("game_start", {"room": room}, room=room)
+    
+# New: Force room update handler for client-side polling
+@socketio.on("force_room_update")
+def handle_force_update(data):
+    room = data.get("room")
+    if room in room_members:
+        members_list = [{"name": m["name"], "position": m["position"]} for m in room_members[room].values()]
+        emit("room_update", {
+            "room": room,
+            "members": members_list,
+            "playerCount": len(members_list)
+        }, room=room)
 
 # New: chat message handler for in-game chat
 @socketio.on("chat_message")

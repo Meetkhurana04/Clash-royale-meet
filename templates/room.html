@@ -50,7 +50,7 @@
       <div style="font-size:13px;color:#aaa">Room code</div>
       <div class="room-code" id="roomCode">{{ room }}</div>
       <div style="margin-top:8px;color:#ccc">You: <strong id="youName">{{ name }}</strong></div>
-      <div id="ownerTag" style="margin-top:6px;color:#aaf; font-size:13px;"></div>
+      <div id="ownerTag" style="margin-top:6px;color:#aaf; font-size:13px;"></div> <!-- NEW: Owner badge here -->
     </div>
 
     <div class="controls">
@@ -69,7 +69,7 @@
     <hr style="border:none; border-top:1px solid rgba(255,255,255,0.04); margin:14px 0;">
     <div>
       <div style="color:#bbb; font-weight:700; margin-bottom:8px;">Players in room</div>
-      <div id="membersList" class="members"></div>
+      <div id="membersList" class="members"></div> <!-- Initial empty; will populate on update -->
     </div>
 
      <div id="statusMsg" class="small"></div>
@@ -92,40 +92,39 @@ Every battle here is a lesson in chaos and karma.
     const userId = {{ user_id if user_id else 'null' }};
     
     const socket = io();
+    let joinAttempted = false; // NEW: Track join to retry
+    let pollInterval; // NEW: For polling updates
     
     socket.on('connect', () => {
       console.log('Connected to server');
-      socket.emit('join_room', {
-        room: roomCode,
-        name: userName
-      });
+      if (!joinAttempted) { // NEW: Retry only if not already tried
+        socket.emit('join_room', {
+          room: roomCode,
+          name: userName
+        });
+        joinAttempted = true;
+      }
+    });
+    
+    socket.on('connect_error', (err) => { // NEW: Handle reconnects
+      console.error('Connection error:', err);
+      joinAttempted = false; // Retry on reconnect
     });
     
     socket.on('room_joined', (data) => {
       console.log('Room joined:', data);
       document.getElementById('statusMsg').textContent = `Waiting for opponent... (${data.playerCount}/2)`;
+      updateMembersList(data.members || []); // NEW: Render initial members if provided
     });
     
     socket.on('room_update', (data) => {
       console.log('Room update:', data);
-      const membersList = document.getElementById('membersList');
-      membersList.innerHTML = '';
-      
-      data.members.forEach(member => {
-        const div = document.createElement('div');
-        div.className = 'member';
-        div.innerHTML = `
-          <span>${member.name}</span>
-          <span style="color:#aaa;font-size:12px">${member.position}</span>
-        `;
-        membersList.appendChild(div);
-      });
-      
+      updateMembersList(data.members || []); // NEW: Extract to function for reuse
       document.getElementById('statusMsg').textContent = `Players: ${data.playerCount}/2`;
       
-      // Enable start button if 2 players
+      // Enable start button if 2 players (and owner)
       const startBtn = document.getElementById('startBtn');
-      if (data.playerCount === 2) {
+      if (data.playerCount === 2 && isRoomOwner) { // NEW: Check owner too
         startBtn.classList.add('enabled');
         startBtn.disabled = false;
       } else {
@@ -133,6 +132,35 @@ Every battle here is a lesson in chaos and karma.
         startBtn.disabled = true;
       }
     });
+    
+    // NEW: Helper to update members list (reusable for poll/initial)
+    function updateMembersList(members) {
+      const membersList = document.getElementById('membersList');
+      membersList.innerHTML = '';
+      
+      // Always show self first (fallback if server misses)
+      if (!members.some(m => m.name === userName)) {
+        const selfDiv = document.createElement('div');
+        selfDiv.className = 'member';
+        selfDiv.innerHTML = `
+          <span>${userName}</span>
+          <span style="color:#aaa;font-size:12px">You</span>
+        `;
+        membersList.appendChild(selfDiv);
+      }
+      
+      members.forEach(member => {
+        if (member.name !== userName) { // Avoid dupes
+          const div = document.createElement('div');
+          div.className = 'member';
+          div.innerHTML = `
+            <span>${member.name}</span>
+            <span style="color:#aaa;font-size:12px">${member.position}</span>
+          `;
+          membersList.appendChild(div);
+        }
+      });
+    }
     
     socket.on('game_start', (data) => {
       console.log('Game starting!');
@@ -146,7 +174,22 @@ Every battle here is a lesson in chaos and karma.
     socket.on('room_error', (data) => {
       console.error('Room error:', data.error);
       alert('Error: ' + data.error);
+      if (data.error.includes('full') || data.error.includes('join')) {
+        window.location.href = '/'; // NEW: Auto-leave on fatal errors
+      }
     });
+    
+    // NEW: Poll for updates every 3s if <2 players (fallback for missed events)
+    function startPolling() {
+      clearInterval(pollInterval);
+      pollInterval = setInterval(() => {
+        const status = document.getElementById('statusMsg').textContent;
+        if (status && status.includes('/2') && !status.includes('2/2')) {
+          socket.emit('force_room_update', { room: roomCode }); // Trigger server re-emit
+        }
+      }, 3000);
+    }
+    startPolling(); // Start on load
     
     // Copy button
     document.getElementById('copyBtn').addEventListener('click', () => {
@@ -160,13 +203,18 @@ Every battle here is a lesson in chaos and karma.
       });
     });
     
-    // Leave button
+    // Leave button (NEW: Emit leave event for clean server sync before redirect)
     document.getElementById('leaveBtn').addEventListener('click', () => {
-      window.location.href = '/';
+      socket.emit('leave_room', { room: roomCode }); // Optional: Server can handle explicit leave
+      setTimeout(() => { window.location.href = '/'; }, 100); // Small delay for emit
     });
     
     // Start button (triggers game start for all)
     document.getElementById('startBtn').addEventListener('click', () => {
+      if (!isRoomOwner) { // NEW: Client-side owner check
+        alert('Only room owner can start the game.');
+        return;
+      }
       socket.emit('game_start', { room: roomCode });
     });
 
@@ -179,6 +227,7 @@ fetch(`/api/room/info?code=${roomCode}`)
       const info = data.room;
       const toggleLabel = document.getElementById('privacyToggle');
       const checkbox = document.getElementById('isPrivateCheckbox');
+      const ownerTag = document.getElementById('ownerTag');
       
       // Set initial state
       checkbox.checked = info.is_private;
@@ -187,6 +236,10 @@ fetch(`/api/room/info?code=${roomCode}`)
       if (info.owner_id === userId) {
         isRoomOwner = true;
         toggleLabel.style.display = 'flex';
+        ownerTag.textContent = '(Room Owner)'; // NEW: Show owner badge
+        document.getElementById('startBtn').title = 'Start game'; // NEW: Update title
+      } else {
+        document.getElementById('startBtn').style.display = 'none'; // NEW: Hide for non-owners
       }
       
       // When changed → update backend
@@ -215,8 +268,11 @@ fetch(`/api/room/info?code=${roomCode}`)
           checkbox.checked = !checkbox.checked;
         });
       });
+    } else {
+      console.error('Failed to fetch room info'); // NEW: Log errors
     }
-  });
+  })
+  .catch(err => console.error('Room info fetch error:', err)); // NEW: Catch network errors
 
   </script>
 
