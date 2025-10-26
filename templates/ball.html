@@ -113,7 +113,11 @@ for (let i = 0; i < 100; i++) {
     let oppPlayerName = 'Opponent'; // will be overwritten by server-sent name
 
     if (multi_mode && room_code) {
-        socket = io();
+        const socket = io({
+    transports: ['websocket'],
+    pingTimeout: 60000,
+    pingInterval: 25000
+});
 
         socket.on('connect', () => {
             console.log('Connected to server');
