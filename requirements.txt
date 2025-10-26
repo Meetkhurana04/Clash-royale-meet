@@ -10,3 +10,5 @@ gunicorn==21.2.0
 Werkzeug==3.0.3
 gevent==23.9.1
 gevent-websocket==0.10.1
+greenlet==3.1.1
+
