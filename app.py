@@ -386,72 +386,75 @@ def handle_join_room(data):
         return
 
     try:
+        # ✅ Ensure room exists in memory (private/public irrelevant)
         if room not in room_members:
             room_members[room] = {}
 
-        # occupancy check (live)
+        # ✅ Only room-full restriction allowed
         if len(room_members[room]) >= 2:
             emit("room_error", {"error": "Room is full"}, to=request.sid)
             return
 
         fs_join_room(room)
 
-        # assign player position
-        player_position = "player1" if len(room_members[room]) == 0 else "player2"
-        room_members[room][request.sid] = {"name": name, "position": player_position}
+        # ✅ Assign positions based on length BEFORE append
+        if len(room_members[room]) == 0:
+            player_position = "player1"
+        else:
+            player_position = "player2"
 
-        # Track user rooms for O(1) access during disconnect
+        room_members[room][request.sid] = {
+            "name": name,
+            "position": player_position
+        }
+
+        # Track user rooms for disconnect
         if request.sid not in user_rooms:
             user_rooms[request.sid] = set()
         user_rooms[request.sid].add(room)
 
-        # Persist live count to DB (best-effort)
+        # ✅ DB update (still optional)
         try:
             db_room = Room.query.filter_by(code=room).first()
             if db_room:
                 db_room.members = len(room_members[room])
                 db.session.commit()
         except Exception:
-            app.logger.exception("Failed to persist member count on join for room %s", room)
+            app.logger.exception("DB sync failed")
             db.session.rollback()
 
-        # Prepare member list to notify clients
-        member_list = [{"name": m["name"], "position": m["position"]}
-                       for m in room_members[room].values()]
+        # ✅ Single unified list for everyone
+        member_list = [
+            {"name": m["name"], "position": m["position"]}
+            for m in room_members[room].values()
+        ]
 
-        # Immediate broadcast to ALL (including new joiner) for reliability
-        emit("room_update", {
-            "room": room,
-            "members": member_list,
-            "playerCount": len(member_list)
-        }, room=room, include_self=True)
-
-        # Then send personalized join info to each player
+        # ✅ OPPONENT detection centralized here
         for sid, info in room_members[room].items():
-            you_name = info["name"]
             opponent_name = None
             for other_sid, other_info in room_members[room].items():
                 if other_sid != sid:
                     opponent_name = other_info["name"]
                     break
 
+            # ✅ Send each their role + opponent name
             emit("room_joined", {
                 "room": room,
                 "position": info["position"],
-                "playerCount": len(room_members[room]),
-                "you": you_name,
+                "you": info["name"],
                 "opponent": opponent_name,
-                "members": member_list
+                "members": member_list,
+                "playerCount": len(member_list)
             }, to=sid)
 
-        # Broadcast room_update for the room
+        # ✅ Only ONE broadcast event, no duplicate
         emit("room_update", {
             "room": room,
             "members": member_list,
             "playerCount": len(member_list)
-        }, room=room)
+        }, room=room, include_self=True)
 
-    except Exception as e:
+    except Exception:
         app.logger.exception("join_room failed")
         emit("room_error", {"error": "Failed to join room"}, to=request.sid)
 
@@ -727,7 +730,7 @@ def api_rooms_list():
         live_count = len(room_members.get(r.code, {}))
 
         # Prune ONLY if empty in BOTH live & DB AND >15 minutes old (protects new owner-created rooms)
-        if live_count < 1 and r.members < 1 and (now - r.created_at) > timedelta(minutes=15):
+        if live_count < 1 and r.members < 1 and (now - r.created_at) > timedelta(minutes=0.01):
             try:
                 db_room = Room.query.filter_by(code=r.code).first()
                 if db_room:
