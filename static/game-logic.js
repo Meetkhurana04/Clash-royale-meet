@@ -1743,7 +1743,7 @@ const attackpower = {
   royal_giant : {
    power: 3,
    speed: 1.5,
-   elixir_needed : 5
+   elixir_needed : 4
 
   }
 }
@@ -2531,7 +2531,7 @@ function createChatUI() {
   chatBtn.title = 'Open chat';
   Object.assign(chatBtn.style, {
     position: 'fixed',
-    right: '20px',
+    left: '20px',
     bottom: '80px',
     width: '50px',
     height: '50px',
@@ -2569,7 +2569,7 @@ function createChatUI() {
   Object.assign(chatModal.style, {
     display: 'none',
     position: 'fixed',
-    right: '20px',
+    left: '20px',
     bottom: '140px',
     width: '320px',
     maxHeight: '400px',

@@ -136,33 +136,27 @@ You control your troops, but not what happens after. Sometimes both sides win. S
     });
     
     // NEW: Helper to update members list (reusable for poll/initial)
-    function updateMembersList(members) {
-      const membersList = document.getElementById('membersList');
-      membersList.innerHTML = '';
-      
-      // Always show self first (fallback if server misses)
-      if (!members.some(m => m.name === userName)) {
-        const selfDiv = document.createElement('div');
-        selfDiv.className = 'member';
-        selfDiv.innerHTML = `
-          <span>${userName}</span>
-          <span style="color:#aaa;font-size:12px">You</span>
-        `;
-        membersList.appendChild(selfDiv);
-      }
-      
-      members.forEach(member => {
-        if (member.name !== userName) { // Avoid dupes
-          const div = document.createElement('div');
-          div.className = 'member';
-          div.innerHTML = `
-            <span>${member.name}</span>
-            <span style="color:#aaa;font-size:12px">${member.position}</span>
-          `;
-          membersList.appendChild(div);
-        }
-      });
-    }
+function updateMembersList(members) {
+  const membersList = document.getElementById('membersList');
+  membersList.innerHTML = '';
+
+  members.forEach(member => {
+    const div = document.createElement('div');
+    div.className = 'member';
+
+    const isYou = (member.name === userName);
+
+    div.innerHTML = `
+      <span>${member.name}</span>
+      <span style="color:#aaa;font-size:12px">
+        ${isYou ? 'You' : ('Opponent' || '')}
+      </span>
+    `;
+
+    membersList.appendChild(div);
+  });
+}
+
     
     socket.on('game_start', (data) => {
       console.log('Game starting!');
