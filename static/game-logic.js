@@ -1517,7 +1517,15 @@ function preventContextMenus() {
 function onTouchStartCard(e, type, side) {
   if (!isTouchDevice()) return;
   // Prevent scroll/zoom and native image actions
-  e.preventDefault();
+   e.preventDefault();
+
+  const needed = attackpower[type.toLowerCase()].elixir_needed;
+  const current = (side === 'our') ? current_elixirour : current_elixiropp;
+
+  // 🔥 Add this early return — just like desktop dragStart
+  if (current < needed) {
+    return; // Not enough elixir — don't start drag
+  }
   const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
   const src = e.currentTarget && e.currentTarget.src ? e.currentTarget.src : null;
   const w = e.currentTarget ? e.currentTarget.clientWidth : 48;
@@ -1536,6 +1544,15 @@ function onTouchStartCard(e, type, side) {
     createDragGhost(src, touch.clientX, touch.clientY, w, h);
   }
 }
+
+canvas.addEventListener('touchcancel', (e) => {
+  e.preventDefault();
+  isDraggingOur = false;
+  isDraggingOpp = false;
+  currentDragSide = null;
+  touchDrag = null;
+  removeDragGhost();
+}, { passive: false });
 
 function onTouchMove(e) {
   if (!touchDrag) return;
