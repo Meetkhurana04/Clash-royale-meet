@@ -6,6 +6,7 @@ let gametime = 180; // 3 minutes
 let isDraggingOur = false;
 let isDraggingOpp = false;
 let currentDragSide = null;
+let aiDifficulty = "medium"; 
 // minimal globals for game end / auto-clear
 window.gameEnded = false;           // set true when the match finishes
 window._clearGameTimeout = null;    // handle to auto-clear timer
@@ -809,12 +810,23 @@ timer(leftCounter, Math.floor(rightCounter))
 // ctx.fillStyle = 'red';        // sets the fill color to red
 // ctx.fillRect(500, 300, 200, 200); // draws a solid rectangle
 
+let oppElixirRate = 0.05;
+if (ai_mode) {
+  switch (aiDifficulty) {
+    case "easy": oppElixirRate = 0.05; break;
+    case "medium": oppElixirRate = 0.06; break;
+    case "hard": oppElixirRate = 0.07; break;   // double regen
+    case "extreme": oppElixirRate = 0.08; break; // even faster
+  }
+}
+
 if (max_elixir > current_elixiropp) {
-    current_elixiropp = Math.min(max_elixir, current_elixiropp + 0.05);
-  }
-  if (max_elixir > current_elixirour) {
-    current_elixirour = Math.min(max_elixir, current_elixirour + 0.05);
-  }
+  current_elixiropp = Math.min(max_elixir, current_elixiropp + oppElixirRate);
+}
+
+if (max_elixir > current_elixirour) {
+  current_elixirour = Math.min(max_elixir, current_elixirour + 0.05);
+}
 
   // Update card visuals after regen
   konseactivehongeplayer(current_elixiropp, current_elixirour);
@@ -2392,7 +2404,7 @@ function MakeOppDeckUnavailable() {
 // ========================
 // 🔹 AI Difficulty Settings
 // ========================
-let aiDifficulty = "extreme"; 
+
 // possible: "easy", "medium", "hard", "extreme"
 
 // helper to easily toggle difficulty
@@ -2425,13 +2437,19 @@ function elexir_check() {
   switch (aiDifficulty) {
     case "easy": elixirReserve = 2; break;     // saves elixir, slower
     case "medium": elixirReserve = 1; break;
-    case "hard": elixirReserve = 0; break;
-    case "extreme": elixirReserve = -1; break; // can overspend a bit
+    //har bhi elexir reserve kare toh mene inhe bhi 2 krdiya
+    case "hard": elixirReserve = 2; break;
+    case "extreme": elixirReserve = 2; break; // -1 can overspend a bit
   }
 
   const affordableChars = Object.keys(attackpower).filter(
     k => attackpower[k].elixir_needed <= (current_elixiropp - elixirReserve)
   );
+
+if (aiDifficulty === "hard" && current_elixiropp > 7) {
+  // prefer high-cost cards
+  affordableChars.sort((a, b) => attackpower[b].elixir_needed - attackpower[a].elixir_needed);
+}
   if (affordableChars.length === 0) return;
 
   // ---------- Difficulty affects spawn targeting behavior ----------
