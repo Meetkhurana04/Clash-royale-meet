@@ -815,8 +815,8 @@ if (ai_mode) {
   switch (aiDifficulty) {
     case "easy": oppElixirRate = 0.05; break;
     case "medium": oppElixirRate = 0.06; break;
-    case "hard": oppElixirRate = 0.07; break;   // double regen
-    case "extreme": oppElixirRate = 0.08; break; // even faster
+    case "hard": oppElixirRate = 0.065; break;   // double regen
+    case "extreme": oppElixirRate = 0.07; break; // even faster
   }
 }
 
