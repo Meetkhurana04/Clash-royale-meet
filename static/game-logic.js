@@ -6,7 +6,7 @@ let gametime = 180; // 3 minutes
 let isDraggingOur = false;
 let isDraggingOpp = false;
 let currentDragSide = null;
-let aiDifficulty = "easy"; 
+let aiDifficulty = "extreme"; 
 // minimal globals for game end / auto-clear
 window.gameEnded = false;           // set true when the match finishes
 window._clearGameTimeout = null;    // handle to auto-clear timer
@@ -2720,4 +2720,7 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+
+
 
