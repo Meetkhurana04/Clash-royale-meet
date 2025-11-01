@@ -291,9 +291,16 @@
                     <span>play with bot
                     </span>
                 </button>
-               <button class="party-btn" id="openRoomModal" type="button" style="cursor:pointer;">
-                <span>play Online (room)</span>
+              <button class="party-btn" id="openRoomModal" type="button" style="cursor:pointer; position:relative;">
+                <span id="roomBtnText">play Online (room)</span>
+                <span id="roomBtnLock" style="position:absolute; top:3px; right:12px; font-size:20px; display:none;">🔒</span>
+                
                 </button>
+                <div id="roomBtnHint" style="position:absolute; bottom:-24px; left:50%; transform:translateX(-50%); 
+                     background:rgb(236, 53, 53); color:#fff; padding:4px 10px; border-radius:6px; 
+                     font-size:11px; white-space:nowrap; display:none; font-weight:700;">
+                 Log in via Social tab to play online
+                </div>
                 
             </div>
 
@@ -852,13 +859,27 @@ async function renderSocial() {
   }
 
   /* ----- enable/disable room button ----- */
-  function enableRoomAccess(enabled) {
-    if (!openRoomModalBtn) return;
-    openRoomModalBtn.disabled = !enabled;
-    openRoomModalBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
-    openRoomModalBtn.style.opacity = enabled ? '1' : '0.7';
-    openRoomModalBtn.title = enabled ? 'Open room modal' : 'Login required to create/join rooms';
+/* ----- enable/disable room button ----- */
+function enableRoomAccess(enabled) {
+  if (!openRoomModalBtn) return;
+  openRoomModalBtn.disabled = !enabled;
+  openRoomModalBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  openRoomModalBtn.style.opacity = enabled ? '1' : '0.7';
+  openRoomModalBtn.title = enabled ? 'Open room modal' : 'Login required to create/join rooms';
+
+  // नया कोड: Lock icon और Hint div को control करें
+  const roomBtnLock = $id('roomBtnLock');
+  const roomBtnHint = $id('roomBtnHint');
+  if (enabled) {
+    // Logged in: Lock और Hint hide करें (display: none)
+    if (roomBtnLock) roomBtnLock.style.display = 'none';
+    if (roomBtnHint) roomBtnHint.style.display = 'none';
+  } else {
+    // Unlogged: Lock और Hint show करें (display: block)
+    if (roomBtnLock) roomBtnLock.style.display = 'block';
+    if (roomBtnHint) roomBtnHint.style.display = 'block';
   }
+}
 
   /* ----- register/login/logout handlers (server API) ----- */
   if (registerBtn) {
