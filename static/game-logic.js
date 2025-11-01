@@ -6,7 +6,7 @@ let gametime = 180; // 3 minutes
 let isDraggingOur = false;
 let isDraggingOpp = false;
 let currentDragSide = null;
-let aiDifficulty = "extreme"; 
+let aiDifficulty = "medium"; 
 // minimal globals for game end / auto-clear
 window.gameEnded = false;           // set true when the match finishes
 window._clearGameTimeout = null;    // handle to auto-clear timer
@@ -814,9 +814,9 @@ let oppElixirRate = 0.05;
 if (ai_mode) {
   switch (aiDifficulty) {
     case "easy": oppElixirRate = 0.05; break;
-    case "medium": oppElixirRate = 0.06; break;
-    case "hard": oppElixirRate = 0.065; break;   // double regen
-    case "extreme": oppElixirRate = 0.07; break; // even faster
+    case "medium": oppElixirRate = 0.069; break;
+    case "hard": oppElixirRate = 0.08; break;   // double regen
+    case "extreme": oppElixirRate = 0.09; break; // even faster
   }
 }
 
